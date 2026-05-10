@@ -1,11 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
-
 import { Heart, Mail, MapPin, ArrowUpRight } from "lucide-react";
-import { GithubIcon, LinkedInIcon, TwitterXIcon } from "./SocialIcons";
 
 import { siteConfig } from "@/config/site";
+
 import { Container } from "@veriworkly/ui";
+
+import { GithubIcon, LinkedInIcon, TwitterXIcon } from "./SocialIcons";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -21,6 +22,7 @@ const Footer = () => {
         { name: "Release Notes", href: "/roadmap/done" },
       ],
     },
+
     {
       title: "Resources",
       links: [
@@ -31,6 +33,7 @@ const Footer = () => {
         { name: "FAQ & Help", href: "/faq" },
       ],
     },
+
     {
       title: "Organization",
       links: [
@@ -45,13 +48,11 @@ const Footer = () => {
 
   return (
     <footer className="border-border/40 relative mt-12 overflow-hidden border-t bg-zinc-50/80 pt-20 pb-10 dark:bg-zinc-950/80">
-      {/* Decorative Gradients */}
-      <div className="bg-accent/10 pointer-events-none absolute -bottom-48 -left-48 h-[500px] w-[500px] rounded-full blur-[120px]" />
-      <div className="bg-accent/5 pointer-events-none absolute -top-48 -right-48 h-[500px] w-[500px] rounded-full blur-[120px]" />
+      <div className="bg-accent/10 pointer-events-none absolute -bottom-48 -left-48 h-125 w-[5w-125nded-full blur-[120px]" />
+      <div className="bg-accent/5 pointer-events-none absolute -top-48 -right-48 h-125 w-125 rounded-full blur-[120px]" />
 
       <Container className="relative">
         <div className="grid grid-cols-1 gap-16 lg:grid-cols-12 lg:gap-8">
-          {/* Brand Info */}
           <div className="space-y-8 lg:col-span-4">
             <div className="space-y-6">
               <Link href="/" className="group flex items-center gap-3">
@@ -63,6 +64,7 @@ const Footer = () => {
                     className="object-contain"
                   />
                 </div>
+
                 <span className="text-2xl font-bold tracking-tight">{siteConfig.shortName}</span>
               </Link>
 
@@ -79,6 +81,7 @@ const Footer = () => {
                 </div>
                 hello@veriworkly.com
               </div>
+
               <div className="flex items-center gap-3 text-sm text-slate-500">
                 <div className="bg-accent/10 flex h-8 w-8 items-center justify-center rounded-lg">
                   <MapPin className="h-4 w-4 text-accent" />
@@ -105,13 +108,13 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Links Grid */}
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:col-span-8">
             {footerLinks.map((column) => (
               <div key={column.title} className="space-y-6">
                 <h4 className="text-foreground text-xs font-black uppercase tracking-[0.2em]">
                   {column.title}
                 </h4>
+
                 <ul className="space-y-4">
                   {column.links.map((link) => (
                     <li key={link.name}>
@@ -133,12 +136,12 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Bottom Section */}
         <div className="border-border/40 mt-20 flex flex-col items-center justify-between gap-8 border-t pt-10 lg:flex-row">
           <div className="flex flex-col items-center gap-4 lg:items-start">
             <p className="text-muted text-sm font-medium">
               © {currentYear} {siteConfig.name}. Build for the future of work.
             </p>
+
             <div className="flex items-center gap-2 rounded-full border border-border/40 bg-background/50 px-4 py-1.5 text-[11px] font-bold text-slate-500 backdrop-blur-sm">
               <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
               SYSTEMS OPERATIONAL • ALL TEMPLATES FREE
@@ -149,16 +152,20 @@ const Footer = () => {
             <p className="text-muted flex items-center gap-1.5 text-xs font-semibold">
               Proudly crafted with <Heart className="h-4 w-4 fill-red-500 text-red-500" /> in Public
             </p>
+
             <div className="flex flex-wrap justify-center gap-6 text-[13px] font-bold text-slate-400">
               <Link href="/privacy" className="hover:text-accent transition-colors">
                 Privacy
               </Link>
+
               <Link href="/terms" className="hover:text-accent transition-colors">
                 Terms
               </Link>
+
               <Link href="/faq" className="hover:text-accent transition-colors">
                 FAQ
               </Link>
+
               <Link href="/security" className="hover:text-accent transition-colors">
                 Security
               </Link>

@@ -4,47 +4,48 @@ import Link from "next/link";
 
 import { Button, Container } from "@veriworkly/ui";
 
-export default function RoadmapError({
+export default function StatsError({
   reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
   return (
-    <main className="flex min-h-screen flex-col">
-      <Container className="py-10 md:py-14">
-        <header className="mb-10 space-y-4">
+    <main className="relative min-h-screen overflow-hidden">
+      <div className="from-destructive/10 pointer-events-none absolute inset-x-0 top-0 h-64" />
+
+      <Container className="relative py-12 md:py-16 text-center">
+        <header className="mx-auto mb-12 max-w-2xl space-y-4">
           <p className="text-destructive text-xs font-semibold tracking-[0.24em] uppercase">
-            Roadmap Error
+            Sync Error
           </p>
 
           <h1 className="text-foreground text-4xl font-semibold tracking-tight sm:text-5xl">
-            Failed to sync roadmap
+            GitHub board sync failed
           </h1>
 
-          <p className="text-muted max-w-2xl text-base leading-7">
-            We couldn&apos;t fetch the latest product roadmap data. This could be due to a temporary
-            connection issue with our GitHub sync service.
+          <p className="text-muted text-base leading-7">
+            We encountered a problem while fetching the latest development activity from GitHub. The
+            board might be temporarily unavailable.
           </p>
         </header>
 
-        <section className="border-border bg-destructive/5 flex flex-col items-center justify-center rounded-3xl border border-dashed py-20 text-center">
+        <section className="border-border bg-destructive/5 mx-auto flex max-w-4xl flex-col items-center justify-center rounded-3xl border border-dashed py-20">
           <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10 text-destructive">
             <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={1.5}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
               />
             </svg>
           </div>
 
-          <h2 className="text-2xl font-bold text-foreground">Sync Interrupted</h2>
+          <h2 className="text-2xl font-bold text-foreground">API Connection Lost</h2>
 
           <p className="mt-2 text-muted max-w-sm px-6">
-            The roadmap data is currently unavailable. You can retry the sync or explore other parts
-            of the platform.
+            We couldn&apos;t establish a secure connection to our development activity worker.
           </p>
 
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
@@ -54,7 +55,7 @@ export default function RoadmapError({
               className="rounded-full px-8"
               onClick={() => reset()}
             >
-              Retry Sync
+              Reconnect Sync
             </Button>
 
             <Button asChild size="lg" variant="ghost" className="rounded-full px-8">

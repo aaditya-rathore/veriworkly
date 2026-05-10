@@ -1,34 +1,46 @@
 import Link from "next/link";
 
-import { Button } from "@veriworkly/ui";
-import { Container } from "@veriworkly/ui";
+import { Button, Container } from "@veriworkly/ui";
 
 const NotFound = () => {
   return (
-    <main className="surface-grid flex min-h-screen items-center justify-center">
-      <Container className="flex flex-col items-center text-center">
+    <div className="surface-grid relative flex min-h-[80vh] items-center justify-center overflow-hidden rounded-3xl border border-border/50 mx-4 my-8 md:mx-8 md:my-12">
+      <div className="absolute inset-0 bg-linear-to-b from-background/0 via-background/20 to-background/80 pointer-events-none" />
+
+      <Container className="relative flex flex-col items-center text-center py-20">
+        <div className="bg-accent/10 mb-8 flex h-24 w-24 items-center justify-center rounded-full text-accent shadow-xl shadow-accent/5">
+          <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+
         <p className="text-accent text-sm font-bold tracking-[0.2em] uppercase">404 Error</p>
 
         <h1 className="text-foreground mt-4 text-4xl font-bold tracking-tight sm:text-6xl">
-          Page not found
+          Lost in Space
         </h1>
 
         <p className="text-muted mt-6 max-w-md text-base leading-7">
-          Sorry, we couldn’t find the page you’re looking for. It might have been moved, or the URL
-          might be incorrect.
+          The page you&apos;re looking for has vanished into the digital void. Don&apos;t worry, we
+          can help you find your way back.
         </p>
 
-        <div className="mt-10 flex items-center justify-center gap-x-6">
-          <Button asChild variant="primary">
-            <Link href="/dashboard">Go back to Dashboard</Link>
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <Button asChild size="lg" variant="primary" className="rounded-full px-8">
+            <Link href="/">Back to Home</Link>
           </Button>
 
-          <Button asChild variant="ghost">
+          <Button asChild size="lg" variant="ghost" className="rounded-full px-8">
             <Link href="/templates">View Templates</Link>
           </Button>
         </div>
       </Container>
-    </main>
+    </div>
   );
 };
 

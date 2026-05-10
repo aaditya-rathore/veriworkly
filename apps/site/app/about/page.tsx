@@ -76,9 +76,9 @@ const AboutPage = () => {
     <>
       <PublicPageShell
         eyebrow="About"
-        primaryAction={{ href: "/dashboard", label: "Open Dashboard" }}
-        secondaryAction={{ href: "/contact", label: "Contact the team" }}
         title="Free ATS Resume Builder Built for Privacy and Simplicity"
+        secondaryAction={{ href: "/contact", label: "Contact the team" }}
+        primaryAction={{ href: "https://app.veriworkly.com/dashboard", label: "Open Dashboard" }}
         description="VeriWorkly is a privacy-first ATS resume builder with modern templates, easy exports, and no login required."
       >
         <script

@@ -1,7 +1,8 @@
 "use client";
 
-import { Button } from "@veriworkly/ui";
-import { Container } from "@veriworkly/ui";
+import Link from "next/link";
+
+import { Button, Container } from "@veriworkly/ui";
 
 export default function Error({
   reset,
@@ -10,36 +11,44 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center">
-      <Container className="flex flex-col items-center text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10 text-red-600">
-          <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div className="surface-grid relative flex min-h-[80vh] items-center justify-center overflow-hidden rounded-3xl border border-border/50 mx-4 my-8 md:mx-8 md:my-12">
+      <div className="absolute inset-0 bg-linear-to-b from-background/0 via-background/20 to-background/80 pointer-events-none" />
+
+      <Container className="relative flex flex-col items-center text-center py-20">
+        <div className="bg-destructive/10 mb-8 flex h-24 w-24 items-center justify-center rounded-full text-destructive shadow-xl shadow-destructive/5">
+          <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeWidth={2}
+              strokeWidth={1.5}
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
         </div>
 
-        <h1 className="text-foreground text-3xl font-bold tracking-tight">Something went wrong</h1>
-
-        <p className="text-muted mt-4 max-w-md text-sm leading-6">
-          An unexpected error occurred. This might be due to a corrupted local storage or a
-          temporary glitch.
+        <p className="text-destructive text-sm font-bold tracking-[0.2em] uppercase">
+          Application Error
         </p>
 
-        <div className="mt-10 flex gap-4">
-          <Button variant="primary" onClick={() => reset()}>
+        <h1 className="text-foreground mt-4 text-4xl font-bold tracking-tight sm:text-6xl">
+          Something went wrong
+        </h1>
+
+        <p className="text-muted mt-6 max-w-md text-base leading-7">
+          An unexpected error occurred. This might be a temporary issue or a problem with the server
+          connection.
+        </p>
+
+        <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <Button size="lg" variant="primary" className="rounded-full px-8" onClick={() => reset()}>
             Try again
           </Button>
 
-          <Button variant="secondary" onClick={() => (window.location.href = "/")}>
-            Go Home
+          <Button asChild size="lg" variant="ghost" className="rounded-full px-8">
+            <Link href="/">Back to Home</Link>
           </Button>
         </div>
       </Container>
-    </main>
+    </div>
   );
 }

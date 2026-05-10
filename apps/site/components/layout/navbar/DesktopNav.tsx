@@ -1,0 +1,36 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
+import { usePathname } from "next/navigation";
+
+import { cn } from "@veriworkly/ui";
+
+import { NAVIGATION_ITEMS } from "./constants";
+
+export const DesktopNav = () => {
+  const pathname = usePathname();
+
+  return (
+    <div className="hidden items-center gap-1 lg:flex">
+      {NAVIGATION_ITEMS.map((item) => (
+        <Link
+          key={item.name}
+          href={item.href}
+          target={item.external ? "_blank" : undefined}
+          rel={item.external ? "noopener noreferrer" : undefined}
+          className={cn(
+            "text-muted hover:text-foreground relative flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 hover:bg-accent/5",
+            pathname === item.href && "text-foreground bg-accent/10",
+          )}
+        >
+          <span>{item.name}</span>
+
+          {item.external && (
+            <ArrowUpRight className="h-3.5 w-3.5 opacity-40 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+          )}
+        </Link>
+      ))}
+    </div>
+  );
+};

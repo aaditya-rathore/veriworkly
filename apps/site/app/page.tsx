@@ -106,7 +106,49 @@ const Home = () => {
         }}
       />
 
-      <main className="py-6 md:py-10">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            name: "How to Create a Professional Resume with VeriWorkly",
+            description:
+              "Learn how to build a professional, ATS-friendly resume in 4 simple steps without signing up.",
+            step: [
+              {
+                "@type": "HowToStep",
+                name: "Launch the Studio",
+                text: "Visit the VeriWorkly Resume Studio at app.veriworkly.com.",
+                url: "https://app.veriworkly.com",
+              },
+              {
+                "@type": "HowToStep",
+                name: "Choose a Template",
+                text: "Select one of our professional, ATS-optimized resume templates.",
+                url: "https://veriworkly.com/templates",
+              },
+              {
+                "@type": "HowToStep",
+                name: "Enter Your Information",
+                text: "Fill in your personal details, experience, education, and skills. Changes are previewed in real-time.",
+              },
+              {
+                "@type": "HowToStep",
+                name: "Export and Download",
+                text: "Download your resume as a professional PDF instantly. No login required.",
+              },
+            ],
+            totalTime: "PT10M",
+            estimatedCost: {
+              "@type": "HowToSupply",
+              name: "Free",
+            },
+          }),
+        }}
+      />
+
+      <section className="py-6 md:py-10">
         <Container className="space-y-12 md:space-y-24">
           <HeroSection />
           <TrustBar />
@@ -118,7 +160,6 @@ const Home = () => {
           <SecuritySection />
           <DocsSection />
           <BlogSection />
-
           <FAQSection />
           <CTASection />
         </Container>
@@ -132,7 +173,7 @@ const Home = () => {
             ready-to-use resumes for job applications.
           </p>
         </section>
-      </main>
+      </section>
     </>
   );
 };

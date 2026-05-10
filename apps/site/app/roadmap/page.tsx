@@ -7,9 +7,10 @@ import {
   fetchRoadmapFromBackend,
 } from "@/features/roadmap/services/roadmap-backend";
 
+import { Container } from "@veriworkly/ui";
+
 import RoadmapPageShell from "./components/RoadmapPageShell";
 import RoadmapSEOContent from "./components/RoadmapSEOContent";
-import { Container } from "@veriworkly/ui";
 
 const pageUrl = `${siteConfig.url}/roadmap`;
 const pageOgImage = `${siteConfig.url}/og/roadmap-page-og.png`;
@@ -74,7 +75,7 @@ export default async function RoadmapPage({ searchParams }: RoadmapPageProps) {
   const data = await fetchRoadmapFromBackend({
     sort: parseSort(params.sort),
     refreshSection: parseStatus(params.refresh),
-  });
+  }).catch(() => null);
 
   return (
     <>

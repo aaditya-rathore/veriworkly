@@ -2,11 +2,13 @@ import { useMemo } from "react";
 
 import {
   type RoadmapSort,
+  type RoadmapStatus,
   type RoadmapResponse,
 } from "@/features/roadmap/services/roadmap-backend";
 
-import { KanbanBoard, type KanbanColumn } from "@/components/roadmap/KanbanBoard";
 import { Container } from "@veriworkly/ui";
+
+import { KanbanBoard, type KanbanColumn } from "@/components/roadmap/KanbanBoard";
 
 import RoadmapHeader from "./RoadmapHeader";
 import RoadmapStatsGrid from "./RoadmapStatsGrid";
@@ -16,7 +18,7 @@ import RoadmapStatusFilters from "./RoadmapStatusFilters";
 interface RoadmapPageShellProps {
   title: string;
   description: string;
-  data: RoadmapResponse;
+  data: RoadmapResponse | null;
   basePath: string;
   activeStatus: "all" | "todo" | "in-progress" | "done";
   rootPath?: string;
@@ -53,14 +55,39 @@ const RoadmapPageShell = ({
   activeStatus,
   rootPath = "/roadmap",
 }: RoadmapPageShellProps) => {
-  const currentSort = data.query.sort;
+  const currentSort = data?.query?.sort ?? "newest";
   const normalizedRootPath = rootPath.replace(/\/$/, "");
 
-  const columns: KanbanColumn[] = data.sections.map((section) => ({
+  const sections = useMemo(
+    () =>
+      data?.sections ?? [
+        {
+          title: "To Do",
+          status: "todo" as RoadmapStatus,
+          items: [],
+          fetchedAt: new Date().toISOString(),
+        },
+        {
+          title: "In Progress",
+          status: "in-progress" as RoadmapStatus,
+          items: [],
+          fetchedAt: new Date().toISOString(),
+        },
+        {
+          title: "Done",
+          status: "done" as RoadmapStatus,
+          items: [],
+          fetchedAt: new Date().toISOString(),
+        },
+      ],
+    [data?.sections],
+  );
+
+  const columns: KanbanColumn[] = sections.map((section) => ({
     title: section.title,
     color:
       section.status === "todo" ? "blue" : section.status === "in-progress" ? "amber" : "emerald",
-    items: section.items.map((item) => ({
+    items: (section.items ?? []).map((item) => ({
       ...item,
       eta: item.eta ?? undefined,
       startedAt: item.startedAt ?? undefined,
@@ -74,7 +101,7 @@ const RoadmapPageShell = ({
   const refreshHrefMap = useMemo(
     () =>
       Object.fromEntries(
-        data.sections.map((section) => [
+        sections.map((section) => [
           section.title,
           buildHref(basePath, currentSort, {
             refresh: section.status,
@@ -82,7 +109,7 @@ const RoadmapPageShell = ({
           }),
         ]),
       ),
-    [data.sections, basePath, currentSort, refreshTimestamp],
+    [sections, basePath, currentSort, refreshTimestamp],
   );
 
   const columnHrefMap = {
@@ -106,7 +133,7 @@ const RoadmapPageShell = ({
           <RoadmapSortControls basePath={basePath} currentSort={currentSort} />
         </div>
 
-        <RoadmapStatsGrid sections={data.sections} />
+        <RoadmapStatsGrid sections={sections} />
 
         <KanbanBoard
           showDescription

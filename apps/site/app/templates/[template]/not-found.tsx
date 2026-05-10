@@ -1,12 +1,11 @@
 import Link from "next/link";
 
-import { Card } from "@veriworkly/ui";
 import { Button } from "@veriworkly/ui";
 
 const TemplateNotFound = () => {
   return (
     <div className="space-y-10 py-10">
-      <header className="space-y-4">
+      <header className="space-y-4 text-center">
         <p className="text-accent text-xs font-semibold tracking-[0.24em] uppercase">
           Template Preview
         </p>
@@ -15,24 +14,42 @@ const TemplateNotFound = () => {
           Template not found
         </h1>
 
-        <p className="text-muted max-w-2xl text-base leading-7">
-          The template you requested does not exist or has been removed.
+        <p className="text-muted mx-auto max-w-2xl text-base leading-7">
+          The template you requested does not exist or has been removed from our collection.
         </p>
       </header>
 
-      <Card className="space-y-6 p-4 md:p-6">
-        <div className="bg-border border-border h-[62vh] w-full rounded-2xl border border-dashed" />
+      <section className="space-y-8">
+        <div className="relative aspect-3/4 w-full max-w-4xl mx-auto border border-dashed border-border rounded-2xl overflow-hidden bg-accent/5 flex flex-col items-center justify-center p-12 text-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-accent/10 text-accent">
+            <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+          </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button asChild variant="primary">
+          <h2 className="text-2xl font-bold text-foreground">Missing Layout</h2>
+
+          <p className="mt-2 text-muted max-w-sm">
+            We couldn&apos;t locate this specific resume format. Try browsing our other modern
+            templates.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+          <Button asChild size="lg" variant="primary" className="rounded-full px-8">
             <Link href="/templates">Browse Templates</Link>
           </Button>
 
-          <Button asChild variant="ghost">
+          <Button asChild size="lg" variant="ghost" className="rounded-full px-8">
             <Link href="/dashboard">Back to Dashboard</Link>
           </Button>
         </div>
-      </Card>
+      </section>
     </div>
   );
 };
