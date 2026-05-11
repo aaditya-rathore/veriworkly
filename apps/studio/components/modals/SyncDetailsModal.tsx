@@ -1,23 +1,34 @@
 "use client";
 
-import { Cloud, Monitor, History, CloudOff, RefreshCw, AlertTriangle } from "lucide-react";
+import {
+  Cloud,
+  Monitor,
+  History,
+  CloudOff,
+  RefreshCw,
+  ChevronRight,
+  ExternalLink,
+  AlertTriangle,
+} from "lucide-react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-import { Modal, Button } from "@veriworkly/ui";
 import { cn } from "@/lib/utils";
 
+import { Modal, Button } from "@veriworkly/ui";
+
+import type { ResumeListItem } from "@/features/resume/services/resume-service";
+import type { ResumeSyncTelemetry } from "@/features/resume/services/resume-sync";
+
 interface SyncDetailsModalProps {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  resume: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  telemetry: any;
+  resume: ResumeListItem;
+  telemetry: ResumeSyncTelemetry | null;
   syncingResumeId: string | null;
   onClose: () => void;
   onResolveUseLocal: (id: string) => void;
   onResolveUseCloud: (id: string) => void;
   onKeepLocalOnly: (id: string) => void;
   onSyncNow: (id: string) => void;
-  onNotice: (msg: string) => void;
 }
 
 const SyncDetailsModal = ({
@@ -29,7 +40,6 @@ const SyncDetailsModal = ({
   onResolveUseCloud,
   onKeepLocalOnly,
   onSyncNow,
-  onNotice,
 }: SyncDetailsModalProps) => {
   const router = useRouter();
   const isSyncing = syncingResumeId === resume.id;
@@ -40,30 +50,39 @@ const SyncDetailsModal = ({
   const statusConfig = {
     synced: {
       label: "Synced",
+      description: "Your data is safe in the cloud.",
       color: "text-emerald-500",
       bg: "md:bg-emerald-500/10",
       icon: Cloud,
     },
+
     syncing: {
       label: "Syncing",
+      description: "Transferring data to our servers...",
       color: "text-accent",
       bg: "md:bg-accent/10",
       icon: RefreshCw,
     },
+
     conflicted: {
       label: "Conflict",
+      description: "Multiple versions detected.",
       color: "text-orange-500",
       bg: "md:bg-orange-500/10",
       icon: AlertTriangle,
     },
+
     pending: {
       label: "Pending",
+      description: "Waiting for a network connection.",
       color: "text-zinc-400",
       bg: "md:bg-zinc-500/10",
       icon: History,
     },
+
     disabled: {
       label: "Local only",
+      description: "Sync is disabled for this resume.",
       color: "text-zinc-500",
       bg: "md:bg-zinc-500/10",
       icon: CloudOff,
@@ -88,13 +107,13 @@ const SyncDetailsModal = ({
           <div className="flex items-center gap-3">
             <div
               className={cn(
-                "flex h-8 w-8 items-center justify-center rounded-lg ring-1 ring-inset",
-                currentStatus.color.replace("text", "ring"),
+                "flex h-9 w-9 items-center justify-center rounded-lg ring-2 ring-inset",
+                currentStatus.color.replace("text", "ring") + "/10",
               )}
             >
               <StatusIcon
                 className={cn(
-                  "h-4 w-4",
+                  "h-4.5 w-4.5",
                   currentStatus.color,
                   currentStatus.label === "Syncing" && "animate-spin",
                 )}
@@ -104,113 +123,146 @@ const SyncDetailsModal = ({
             <div>
               <h2 className="text-sm font-bold tracking-tight">Sync Status</h2>
 
-              <p
-                className={cn(
-                  "text-[10px] font-bold tracking-widest uppercase",
-                  currentStatus.color,
-                )}
-              >
-                {currentStatus.label}
-              </p>
+              <div className="flex items-center">
+                <p
+                  className={cn(
+                    "text-[10px] font-bold tracking-widest uppercase",
+                    currentStatus.color,
+                  )}
+                >
+                  {currentStatus.label}
+                </p>
+
+                <span className="bg-foreground/10 mr-0.5 ml-2 block h-1 w-1 rounded-full" />
+
+                <span className="text-muted-foreground text-[10px] font-medium italic">
+                  {currentStatus.description}
+                </span>
+              </div>
             </div>
           </div>
-
-          <Button size="sm" variant="ghost" onClick={onClose} className="h-8 text-xs">
-            Close
-          </Button>
         </div>
 
         <Modal.Body className="space-y-5 p-4">
           <div className="space-y-1.5">
             <label className="text-muted text-[10px] font-bold tracking-widest uppercase">
-              Target Resume
+              Target Document
             </label>
 
-            <div className="rounded-lg border bg-zinc-500/5 px-3 py-2 text-sm font-medium">
-              {resume.title}
+            <div className="bg-muted/5 group hover:bg-muted/10 flex items-center justify-between rounded-xl border px-4 py-3 transition-colors">
+              <span className="text-sm font-bold">{resume.title}</span>
+
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => router.push(`/editor/${resume.id}`)}
+                className="h-8 w-8 rounded-full p-0 opacity-0 transition-all group-hover:opacity-100"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1 rounded-lg border p-2.5">
-              <p className="text-muted flex items-center gap-1.5 text-[10px] font-bold tracking-tighter uppercase">
-                <Cloud className="h-3 w-3" /> Last Synced
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-card space-y-1 rounded-xl border p-3">
+              <p className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-bold tracking-tight uppercase">
+                <Cloud className="-mt-px h-3.5 w-3.5 opacity-60" /> Last Synced
               </p>
 
-              <p className="text-xs font-medium">
+              <p className="text-xs font-bold">
                 {resume.sync.lastSyncedAt
-                  ? new Date(resume.sync.lastSyncedAt).toLocaleDateString()
+                  ? new Date(resume.sync.lastSyncedAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })
                   : "Never"}
               </p>
             </div>
 
-            <div className="space-y-1 rounded-lg border p-2.5">
-              <p className="text-muted flex items-center gap-1.5 text-[10px] font-bold tracking-tighter uppercase">
-                <Monitor className="h-3 w-3" /> Last Attempt
+            <div className="bg-card space-y-1 rounded-xl border p-3">
+              <p className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-bold tracking-tight uppercase">
+                <Monitor className="-mt-px h-3.5 w-3.5 opacity-60" /> Last Attempt
               </p>
 
-              <p className="text-xs font-medium">
+              <p className="text-xs font-bold">
                 {telemetry?.lastAttemptAt
-                  ? new Date(telemetry.lastAttemptAt).toLocaleTimeString()
+                  ? new Date(telemetry.lastAttemptAt).toLocaleTimeString(undefined, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                   : "N/A"}
               </p>
             </div>
           </div>
 
           {telemetry?.lastErrorMessage && (
-            <div className="border-destructive/20 bg-destructive/5 rounded-lg border p-3">
-              <p className="text-destructive mb-1 text-[10px] font-bold tracking-widest uppercase">
-                Last Error
-              </p>
+            <div className="border-destructive/20 bg-destructive/5 rounded-xl border p-3">
+              <div className="mb-1 flex items-center gap-2">
+                <AlertTriangle className="text-destructive h-3.5 w-3.5" />
 
-              <p className="text-destructive/80 text-xs leading-relaxed font-medium">
-                {telemetry.lastErrorMessage}
-              </p>
+                <p className="text-destructive text-[10px] font-black tracking-widest uppercase">
+                  Runtime Error
+                </p>
+              </div>
+
+              <p className="text-muted-foreground text-xs leading-relaxed font-medium">hello</p>
             </div>
           )}
 
           {isConflicted && (
-            <div className="animate-in fade-in slide-in-from-top-2 space-y-3 rounded-xl border border-orange-500/20 bg-orange-500/5 p-4">
-              <div className="flex items-start gap-3 text-orange-600 dark:text-orange-400">
-                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+            <div className="animate-in fade-in slide-in-from-top-4 space-y-4 rounded-2xl border border-orange-500/20 bg-orange-500/5 p-4 shadow-inner">
+              <div className="flex items-start gap-4 text-orange-600 dark:text-orange-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-500/10">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
 
                 <div className="space-y-1">
                   <p className="text-sm leading-none font-bold">Conflict Detected</p>
 
-                  <p className="text-xs leading-snug opacity-80">
-                    The version in the cloud is different from your local version. How would you
-                    like to resolve this?
+                  <p className="text-muted-foreground text-xs leading-snug">
+                    The cloud version has progressed further or diverged from your local copy.
+                    Choose how to proceed.
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-2 pt-2">
+              <div className="grid gap-3 pt-2">
                 <Button
-                  size="sm"
+                  size="md"
                   onClick={() => onResolveUseLocal(resume.id)}
-                  className="h-9 justify-between border-orange-500/30 hover:bg-orange-500/10"
+                  className="h-11 justify-between bg-white px-4 text-orange-600 shadow-sm ring-1 ring-orange-500/20 hover:bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:hover:bg-orange-950/40"
                 >
-                  <span className="text-xs">Overwrite Cloud with Local</span>
-                  <Monitor className="h-3.5 w-3.5 opacity-50" />
+                  <div className="flex items-center gap-3">
+                    <Monitor className="h-4 w-4" />
+                    <span className="text-xs font-bold">Push Local to Cloud</span>
+                  </div>
+
+                  <ChevronRight className="h-3.5 w-3.5 opacity-50" />
                 </Button>
 
                 <Button
-                  size="sm"
+                  size="md"
                   onClick={() => onResolveUseCloud(resume.id)}
-                  className="h-9 justify-between border-orange-500/30 hover:bg-orange-500/10"
+                  className="h-11 justify-between bg-white px-4 text-orange-600 shadow-sm ring-1 ring-orange-500/20 hover:bg-orange-50 dark:bg-orange-950/20 dark:text-orange-400 dark:hover:bg-orange-950/40"
                 >
-                  <span className="text-xs">Use Cloud Version</span>
-                  <Cloud className="h-3.5 w-3.5 opacity-50" />
+                  <div className="flex items-center gap-3">
+                    <Cloud className="h-4 w-4" />
+                    <span className="text-xs font-bold">Pull Cloud to Local</span>
+                  </div>
+
+                  <ChevronRight className="h-3.5 w-3.5 opacity-50" />
                 </Button>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3 pt-1">
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="text-[10px] font-bold tracking-tighter uppercase"
+                    variant="secondary"
+                    className="text-[10px] font-black tracking-widest uppercase"
                     onClick={() => {
-                      onNotice("Resolve fields in editor, then click Sync Now.");
+                      toast.info("Opening editor for manual merge...");
                       router.push(`/editor/${resume.id}`);
+                      onClose();
                     }}
                   >
                     Merge Manually
@@ -218,9 +270,9 @@ const SyncDetailsModal = ({
 
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="secondary"
                     onClick={() => onKeepLocalOnly(resume.id)}
-                    className="text-[10px] font-bold tracking-tighter uppercase"
+                    className="text-muted-foreground hover:text-foreground text-[10px] font-black tracking-widest uppercase"
                   >
                     Keep Local Only
                   </Button>
@@ -230,25 +282,25 @@ const SyncDetailsModal = ({
           )}
         </Modal.Body>
 
-        <Modal.Footer>
+        <Modal.Footer className="bg-zinc-50/50 p-4 dark:bg-zinc-900/50">
           {!isConflicted && (
             <Button
               size="sm"
               variant="secondary"
-              className="text-xs"
+              className="text-xs font-semibold"
               onClick={() => router.push("/profile")}
             >
-              Open Profile
+              Cloud Settings
             </Button>
           )}
 
           <Button
             size="sm"
             loading={isSyncing}
-            className="shadow-md"
             onClick={() => onSyncNow(resume.id)}
+            className="font-semibold shadow-md active:scale-95"
           >
-            {isConflicted ? "Retry Sync" : "Sync Now"}
+            {isConflicted ? "Retry Handshake" : "Sync Now"}
           </Button>
         </Modal.Footer>
       </Modal.Content>

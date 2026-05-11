@@ -265,6 +265,8 @@ export function buildExportHtml(targetId: string) {
                   padding: 0;
                   background: #ffffff;
                   height: 100%;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
                 }
 
                 body {
@@ -277,6 +279,8 @@ export function buildExportHtml(targetId: string) {
                   width: ${sourceWidth}px;
                   max-width: ${sourceWidth}px;
                   min-height: 100%;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
                 }
 
                 #export-root > * {

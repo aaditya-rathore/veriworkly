@@ -12,7 +12,7 @@ const inputVariants = {
 } as const;
 
 const inputSizes = {
-  sm: "h-8 px-3 text-xs rounded-lg",
+  sm: "h-9 px-3 text-xs rounded-lg",
   md: "h-11 px-4 text-sm rounded-2xl",
   lg: "h-12 px-5 text-base rounded-2xl",
 } as const;

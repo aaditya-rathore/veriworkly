@@ -183,6 +183,7 @@ const resumeDataSchemaBase = z
       status: resumeSyncStatusSchema,
       cloudResumeId: z.string().nullable(),
       lastSyncedAt: z.string().nullable(),
+      revision: z.number().int().default(1),
     }),
     updatedAt: z.string(),
   })

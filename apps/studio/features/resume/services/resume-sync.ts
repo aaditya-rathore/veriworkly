@@ -13,9 +13,16 @@ import {
 import { saveResume, loadResumeById } from "@/features/resume/services/resume-service";
 import { parseResumeDataInput } from "@/features/resume/schemas/resume-storage-schema";
 
+import { DocumentApi, type CloudDocument } from "@/features/documents/services/document-api";
+import {
+  SyncEngine,
+  type SyncStatus,
+  type SyncTelemetry,
+} from "@/features/documents/services/sync-engine";
+
 import { backendApiUrl } from "@/lib/constants";
 
-type SyncResult = {
+export type ResumeSyncResult = {
   ok: boolean;
   message: string;
   reason?: "conflict" | "auth" | "forbidden" | "not-found" | "network" | "unknown";
@@ -35,57 +42,15 @@ interface ResumeSyncWorkerOptions {
   idleDelayMs?: number;
 }
 
-interface SyncOutboxItem {
-  resumeId: string;
-  state: "pending" | "syncing" | "conflicted";
-  attempts: number;
-  nextAttemptAt: number;
-  updatedAt: number;
-}
-
-interface SyncOutboxState {
-  items: Record<string, SyncOutboxItem>;
-}
-
-export interface ResumeSyncTelemetry {
-  lastAttemptAt: string | null;
-  lastSuccessAt: string | null;
-  lastErrorAt: string | null;
-  lastErrorMessage: string | null;
-}
-
-interface SyncTelemetryState {
-  byResumeId: Record<string, ResumeSyncTelemetry>;
-}
-
-type CloudResumeRecord = {
-  id: string;
-  title: string;
-  content: unknown;
-  template: string;
-  isPublic: boolean;
-  syncEnabled: boolean;
-  syncStatus: string;
-  cloudResumeId: string | null;
-  lastSyncedAt: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-type CloudResumeResponse = {
-  data: CloudResumeRecord[] | CloudResumeRecord;
-};
+export type ResumeSyncTelemetry = SyncTelemetry;
 
 const CLOUD_HYDRATE_META_KEY = "veriworkly:cloud-hydrate-meta";
-const SYNC_OUTBOX_STORAGE_KEY = "veriworkly:resume-sync-outbox";
-const SYNC_TELEMETRY_STORAGE_KEY = "veriworkly:resume-sync-telemetry";
-export const RESUME_SYNC_OUTBOX_UPDATED_EVENT = "veriworkly:resume-sync-outbox-updated";
+export const RESUME_SYNC_OUTBOX_UPDATED_EVENT = "veriworkly:sync-outbox-updated";
 
 const DEFAULT_AUTO_SYNC_IDLE_DELAY_MS = 12_000;
 const DEFAULT_MIN_HYDRATE_INTERVAL_MS = 2 * 60 * 1000;
 
 let workerTickTimer: number | null = null;
-
 let workerEnabled = false;
 let listenersAttached = false;
 let workerTickInFlight = false;
@@ -95,169 +60,19 @@ function isBrowser() {
   return typeof window !== "undefined";
 }
 
-function emitResumeSyncOutboxUpdate() {
-  if (!isBrowser()) {
-    return;
-  }
-
-  window.dispatchEvent(new Event(RESUME_SYNC_OUTBOX_UPDATED_EVENT));
-}
-
-function toIsoOrNull(value: number | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  return new Date(value).toISOString();
-}
-
 function toTimestamp(value: string | null | undefined) {
-  if (!value) {
-    return 0;
-  }
-
+  if (!value) return 0;
   const parsed = Date.parse(value);
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function loadSyncOutboxState(): SyncOutboxState {
-  if (!isBrowser()) {
-    return { items: {} };
-  }
-
-  const raw = window.localStorage.getItem(SYNC_OUTBOX_STORAGE_KEY);
-
-  if (!raw) {
-    return { items: {} };
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as SyncOutboxState;
-
-    if (!parsed || typeof parsed !== "object" || !parsed.items) {
-      return { items: {} };
-    }
-
-    return {
-      items: parsed.items,
-    };
-  } catch {
-    return { items: {} };
-  }
-}
-
-function saveSyncOutboxState(state: SyncOutboxState) {
-  if (!isBrowser()) return;
-
-  window.localStorage.setItem(SYNC_OUTBOX_STORAGE_KEY, JSON.stringify(state));
-  emitResumeSyncOutboxUpdate();
-}
-
-function loadSyncTelemetryState(): SyncTelemetryState {
-  if (!isBrowser()) return { byResumeId: {} };
-
-  const raw = window.localStorage.getItem(SYNC_TELEMETRY_STORAGE_KEY);
-
-  if (!raw) {
-    return { byResumeId: {} };
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as SyncTelemetryState;
-
-    if (!parsed || typeof parsed !== "object" || !parsed.byResumeId) {
-      return { byResumeId: {} };
-    }
-
-    return parsed;
-  } catch {
-    return { byResumeId: {} };
-  }
-}
-
-function saveSyncTelemetryState(state: SyncTelemetryState) {
-  if (!isBrowser()) return;
-
-  window.localStorage.setItem(SYNC_TELEMETRY_STORAGE_KEY, JSON.stringify(state));
-
-  emitResumeSyncOutboxUpdate();
-}
-
-function updateSyncTelemetry(resumeId: string, patch: Partial<ResumeSyncTelemetry>) {
-  const state = loadSyncTelemetryState();
-  const existing = state.byResumeId[resumeId] ?? {
-    lastAttemptAt: null,
-    lastSuccessAt: null,
-    lastErrorAt: null,
-    lastErrorMessage: null,
-  };
-
-  state.byResumeId[resumeId] = {
-    ...existing,
-    ...patch,
-  };
-
-  saveSyncTelemetryState(state);
-}
-
-function clearOutboxItem(resumeId: string) {
-  const state = loadSyncOutboxState();
-
-  if (!state.items[resumeId]) return;
-
-  delete state.items[resumeId];
-  saveSyncOutboxState(state);
-}
-
-function computeRetryDelayMs() {
-  return workerIdleDelayMs;
-}
-
-function upsertOutboxItem(
-  resumeId: string,
-  input?: Partial<SyncOutboxItem> & { delayMs?: number },
-) {
-  const now = Date.now();
-
-  const state = loadSyncOutboxState();
-
-  const existing = state.items[resumeId];
-  const delayMs = Math.max(0, input?.delayMs ?? workerIdleDelayMs);
-  const nextAttemptAt = input?.nextAttemptAt ?? now + delayMs;
-
-  state.items[resumeId] = {
-    resumeId,
-    state: input?.state ?? existing?.state ?? "pending",
-    attempts: input?.attempts ?? existing?.attempts ?? 0,
-    nextAttemptAt,
-    updatedAt: now,
-  };
-
-  saveSyncOutboxState(state);
-}
-
-function queuePendingResumesForSync() {
-  const collection = loadResumeCollectionFromLocalStorage();
-
-  const pendingResumes = Object.values(collection.items).filter(
-    (resume) => resume.sync.enabled && resume.sync.status === "pending",
-  );
-
-  for (const resume of pendingResumes) {
-    upsertOutboxItem(resume.id);
-  }
-}
+// --- Sync Worker Logic ---
 
 function scheduleWorkerTick(delayMs: number) {
-  if (!isBrowser()) {
-    return;
-  }
-
+  if (!isBrowser()) return;
   if (workerTickTimer !== null) {
     window.clearTimeout(workerTickTimer);
-    workerTickTimer = null;
   }
-
   workerTickTimer = window.setTimeout(
     () => {
       workerTickTimer = null;
@@ -269,53 +84,22 @@ function scheduleWorkerTick(delayMs: number) {
 
 function getNextDueOutboxItem() {
   const now = Date.now();
-
-  const state = loadSyncOutboxState();
-
-  const items = Object.values(state.items)
+  const outbox = SyncEngine.getOutbox();
+  const items = Object.values(outbox)
     .filter((item) => item.state !== "conflicted")
     .sort((left, right) => left.nextAttemptAt - right.nextAttemptAt);
 
   if (items.length === 0) return null;
-
   const first = items[0];
-
   return {
     item: first,
     delayMs: Math.max(0, first.nextAttemptAt - now),
   };
 }
 
-function setLocalSyncState(
-  resumeId: string,
-  status: ResumeSyncStatus,
-  options?: { keepEnabled?: boolean },
-) {
-  const resume = loadResumeById(resumeId);
-
-  if (!resume) return;
-
-  const nextSyncedAt = status === "synced" ? new Date().toISOString() : null;
-
-  saveResume({
-    ...resume,
-    sync: {
-      ...resume.sync,
-      enabled: options?.keepEnabled === false ? resume.sync.enabled : true,
-      status,
-      cloudResumeId: resume.sync.cloudResumeId ?? resume.id,
-      lastSyncedAt: nextSyncedAt ?? resume.sync.lastSyncedAt,
-    },
-  });
-}
-
 async function runWorkerTick() {
-  if (!workerEnabled || workerTickInFlight) {
-    return;
-  }
-
+  if (!workerEnabled || workerTickInFlight) return;
   const due = getNextDueOutboxItem();
-
   if (!due) return;
 
   if (due.delayMs > 0) {
@@ -324,586 +108,250 @@ async function runWorkerTick() {
   }
 
   workerTickInFlight = true;
-
   try {
-    const currentResume = loadResumeById(due.item.resumeId);
-
-    if (!currentResume || !currentResume.sync.enabled) {
-      clearOutboxItem(due.item.resumeId);
-      return;
+    const resume = loadResumeById(due.item.id);
+    if (resume && resume.sync.enabled) {
+      await syncResumeNow(due.item.id);
+    } else {
+      SyncEngine.removeOutboxItem(due.item.id);
     }
-
-    await syncResumeNow(due.item.resumeId);
   } finally {
     workerTickInFlight = false;
-
     const nextDue = getNextDueOutboxItem();
-
-    if (workerEnabled && nextDue) {
-      scheduleWorkerTick(nextDue.delayMs);
-    }
+    if (workerEnabled && nextDue) scheduleWorkerTick(nextDue.delayMs);
   }
 }
 
 function attachWorkerListeners() {
-  if (!isBrowser() || listenersAttached) {
-    return;
-  }
-
+  if (!isBrowser() || listenersAttached) return;
   const requeueAndRun = () => {
-    if (!workerEnabled) {
-      return;
-    }
-
+    if (!workerEnabled) return;
     queuePendingResumesForSync();
     const nextDue = getNextDueOutboxItem();
-
-    if (nextDue) {
-      scheduleWorkerTick(nextDue.delayMs);
-    }
+    if (nextDue) scheduleWorkerTick(nextDue.delayMs);
   };
 
   window.addEventListener(RESUME_STORAGE_UPDATED_EVENT, requeueAndRun);
   window.addEventListener("online", requeueAndRun);
   window.addEventListener("focus", requeueAndRun);
   window.addEventListener("visibilitychange", requeueAndRun);
-
   listenersAttached = true;
 }
 
-function getCloudHydrateMeta() {
-  if (!isBrowser()) {
-    return {
-      lastHydratedAt: 0,
-      lastServerCursor: null as string | null,
-    };
-  }
-
-  const raw = window.localStorage.getItem(CLOUD_HYDRATE_META_KEY);
-
-  if (!raw) {
-    return {
-      lastHydratedAt: 0,
-      lastServerCursor: null as string | null,
-    };
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as {
-      lastHydratedAt?: number;
-      lastServerCursor?: string | null;
-    };
-
-    return {
-      lastHydratedAt: Number(parsed.lastHydratedAt) || 0,
-      lastServerCursor:
-        typeof parsed.lastServerCursor === "string" && parsed.lastServerCursor
-          ? parsed.lastServerCursor
-          : null,
-    };
-  } catch {
-    return {
-      lastHydratedAt: 0,
-      lastServerCursor: null as string | null,
-    };
-  }
-}
-
-function getLastCloudHydrateAt() {
-  return getCloudHydrateMeta().lastHydratedAt;
-}
-
-function setLastCloudHydrateMeta(meta: {
-  lastHydratedAt: number;
-  lastServerCursor?: string | null;
-}) {
-  if (!isBrowser()) return;
-
-  const current = getCloudHydrateMeta();
-
-  window.localStorage.setItem(
-    CLOUD_HYDRATE_META_KEY,
-    JSON.stringify({
-      lastHydratedAt: meta.lastHydratedAt,
-      lastServerCursor:
-        meta.lastServerCursor === undefined ? current.lastServerCursor : meta.lastServerCursor,
-    }),
-  );
-}
-
-function shouldHydrateCloudResumes(options?: HydrateCloudResumesOptions) {
-  if (options?.force) return true;
-
-  const minIntervalMs = Math.max(0, options?.minIntervalMs ?? DEFAULT_MIN_HYDRATE_INTERVAL_MS);
-
-  if (minIntervalMs === 0) {
-    return true;
-  }
-
-  const elapsedMs = Date.now() - getLastCloudHydrateAt();
-
-  return elapsedMs >= minIntervalMs;
-}
-
-function toKnownSyncStatus(
-  value: string | undefined,
-  fallback: ResumeSyncStatus,
-): ResumeSyncStatus {
-  if (
-    value === "local-only" ||
-    value === "pending" ||
-    value === "syncing" ||
-    value === "synced" ||
-    value === "conflicted"
-  ) {
-    return value;
-  }
-
-  return fallback;
-}
-
-function applyCloudSyncMetadata(resume: ResumeData, record: CloudResumeRecord): ResumeData {
-  const fallbackStatus = resume.sync.enabled ? "pending" : "local-only";
-
-  return {
-    ...resume,
-    sync: {
-      ...resume.sync,
-      enabled: record.syncEnabled,
-      status: toKnownSyncStatus(record.syncStatus, fallbackStatus),
-      cloudResumeId: record.cloudResumeId ?? resume.sync.cloudResumeId,
-      lastSyncedAt: record.lastSyncedAt ?? resume.sync.lastSyncedAt,
-    },
-  };
-}
-
-function emitResumeStorageUpdate() {
-  if (typeof window === "undefined") return;
-
-  window.dispatchEvent(new Event("storage"));
-}
-
-function mergeCloudResumesIntoLocalStorage(records: CloudResumeRecord[]) {
-  let mergedCount = 0;
-
+function queuePendingResumesForSync() {
   const collection = loadResumeCollectionFromLocalStorage();
-  const activeResumeId = getActiveResumeIdFromLocalStorage();
-
-  for (const record of records) {
-    const cloudResume = parseResumeDataInput(record.content);
-
-    if (!cloudResume) continue;
-
-    const localResume = collection.items[cloudResume.id];
-    const localUpdatedAt = toTimestamp(localResume?.updatedAt);
-
-    const cloudUpdatedAt = Math.max(
-      toTimestamp(cloudResume.updatedAt),
-      toTimestamp(record.updatedAt),
-    );
-
-    const shouldPreferCloud = !localResume || cloudUpdatedAt > localUpdatedAt;
-
-    if (!shouldPreferCloud) continue;
-
-    const normalizedCloudResume = applyCloudSyncMetadata(cloudResume, record);
-
-    collection.items[normalizedCloudResume.id] = normalizedCloudResume;
-    mergedCount += 1;
-  }
-
-  if (mergedCount === 0) return { ok: true, mergedCount: 0 } as const;
-
-  const saveResult = saveResumeCollectionToLocalStorage(collection);
-
-  if (!saveResult.ok) return { ok: false, mergedCount: 0 } as const;
-
-  if (activeResumeId && collection.items[activeResumeId]) {
-    setActiveResumeIdInLocalStorage(activeResumeId);
-  } else {
-    const nextActiveId = Object.keys(collection.items)[0];
-
-    if (nextActiveId) {
-      setActiveResumeIdInLocalStorage(nextActiveId);
-    }
-  }
-
-  emitResumeStorageUpdate();
-
-  return { ok: true, mergedCount } as const;
-}
-
-async function fetchCloudResumeRecords(path: string) {
-  const response = await fetch(backendApiUrl(path), {
-    method: "GET",
-    credentials: "include",
-    cache: "no-store",
-  });
-
-  if (!response.ok) {
-    return null;
-  }
-
-  const payload = (await response.json()) as CloudResumeResponse;
-
-  if (Array.isArray(payload.data)) {
-    return payload.data;
-  }
-
-  return [payload.data];
-}
-
-function toFriendlySyncMessage(status: number) {
-  if (status === 409) {
-    return {
-      message: "Conflict detected. Cloud has newer changes.",
-      reason: "conflict" as const,
-    };
-  }
-
-  if (status === 401) {
-    return {
-      message: "Login required to sync this resume.",
-      reason: "auth" as const,
-    };
-  }
-
-  if (status === 403) {
-    return {
-      message: "You are not allowed to sync this resume.",
-      reason: "forbidden" as const,
-    };
-  }
-
-  if (status === 404) {
-    return {
-      message: "Resume not found in cloud sync service.",
-      reason: "not-found" as const,
-    };
-  }
-
-  return {
-    message: "Sync failed. Please try again.",
-    reason: "unknown" as const,
-  };
-}
-
-function buildResumesListPath() {
-  const cloudMeta = getCloudHydrateMeta();
-
-  if (!cloudMeta.lastServerCursor) {
-    return "/resumes";
-  }
-
-  return `/resumes?updatedSince=${encodeURIComponent(cloudMeta.lastServerCursor)}`;
-}
-
-export function getResumeSyncTelemetry(resumeId: string): ResumeSyncTelemetry {
-  const telemetry = loadSyncTelemetryState();
-
-  return (
-    telemetry.byResumeId[resumeId] ?? {
-      lastAttemptAt: null,
-      lastSuccessAt: null,
-      lastErrorAt: null,
-      lastErrorMessage: null,
-    }
+  const pending = Object.values(collection.items).filter(
+    (resume) => resume.sync.enabled && resume.sync.status === "pending",
   );
-}
-
-export function getResumeSyncTelemetryByIds(
-  resumeIds: string[],
-): Record<string, ResumeSyncTelemetry> {
-  const telemetry = loadSyncTelemetryState();
-  const result: Record<string, ResumeSyncTelemetry> = {};
-
-  for (const resumeId of resumeIds) {
-    result[resumeId] = telemetry.byResumeId[resumeId] ?? {
-      lastAttemptAt: null,
-      lastSuccessAt: null,
-      lastErrorAt: null,
-      lastErrorMessage: null,
-    };
+  for (const resume of pending) {
+    SyncEngine.upsertOutboxItem(resume.id);
   }
-
-  return result;
-}
-
-export function getWorkspaceSyncTelemetry() {
-  const telemetry = loadSyncTelemetryState();
-  const values = Object.values(telemetry.byResumeId);
-  const maxAttempt = Math.max(...values.map((item) => toTimestamp(item.lastAttemptAt)), 0);
-  const maxSuccess = Math.max(...values.map((item) => toTimestamp(item.lastSuccessAt)), 0);
-
-  return {
-    lastAttemptAt: toIsoOrNull(maxAttempt),
-    lastSuccessAt: toIsoOrNull(maxSuccess),
-  };
 }
 
 export function startResumeSyncWorker(options: ResumeSyncWorkerOptions) {
   workerEnabled = options.enabled;
   workerIdleDelayMs = Math.max(2_000, options.idleDelayMs ?? DEFAULT_AUTO_SYNC_IDLE_DELAY_MS);
-
   attachWorkerListeners();
 
-  if (!workerEnabled) {
-    if (workerTickTimer !== null && isBrowser()) {
-      window.clearTimeout(workerTickTimer);
-      workerTickTimer = null;
-    }
-    return;
-  }
-
-  queuePendingResumesForSync();
-
-  const nextDue = getNextDueOutboxItem();
-
-  if (nextDue) {
-    scheduleWorkerTick(nextDue.delayMs);
+  if (workerEnabled) {
+    queuePendingResumesForSync();
+    const nextDue = getNextDueOutboxItem();
+    if (nextDue) scheduleWorkerTick(nextDue.delayMs);
   }
 }
+
+export async function syncAllPendingResumes() {
+  const collection = loadResumeCollectionFromLocalStorage();
+  const pending = Object.values(collection.items).filter(
+    (resume) => resume.sync.enabled && resume.sync.status === "pending",
+  );
+
+  const results = await Promise.all(pending.map((resume) => syncResumeNow(resume.id)));
+
+  return results;
+}
+
+
+// --- Sync Actions ---
 
 export async function syncResumeNow(
   resumeId: string,
   options?: SyncNowOptions,
-): Promise<SyncResult> {
+): Promise<ResumeSyncResult> {
   const resume = loadResumeById(resumeId);
-
-  if (!resume) {
-    return {
-      ok: false,
-      message: "Resume not found locally.",
-      reason: "not-found",
-    };
-  }
-
-  if (!resume.sync.enabled) {
-    saveResume({
-      ...resume,
-      sync: {
-        ...resume.sync,
-        enabled: true,
-        status: "pending",
-      },
-    });
-  }
+  if (!resume) return { ok: false, message: "Resume not found locally.", reason: "not-found" };
 
   setLocalSyncState(resumeId, "syncing");
-  updateSyncTelemetry(resumeId, {
-    lastAttemptAt: new Date().toISOString(),
-  });
-  upsertOutboxItem(resumeId, {
-    state: "syncing",
-    delayMs: 0,
-  });
+  SyncEngine.updateTelemetry(resumeId, { lastAttemptAt: new Date().toISOString() });
+  SyncEngine.upsertOutboxItem(resumeId, { state: "syncing" });
 
   try {
-    const response = await fetch(backendApiUrl(`/resumes/${resumeId}/sync`), {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify({
-        syncEnabled: true,
-        syncStatus: "synced",
-        force: Boolean(options?.force),
-        clientUpdatedAt: resume.updatedAt,
-        cloudResumeId: resume.sync.cloudResumeId ?? resume.id,
-        lastSyncedAt: new Date().toISOString(),
-        resume,
-      }),
-    });
+    const isNew = !resume.sync.cloudResumeId;
+    let cloud: CloudDocument;
 
-    if (!response.ok) {
-      const failure = toFriendlySyncMessage(response.status);
-
-      if (failure.reason === "conflict") {
-        setLocalSyncState(resumeId, "conflicted");
-        upsertOutboxItem(resumeId, {
-          state: "conflicted",
-          attempts: 0,
-          nextAttemptAt: Date.now() + workerIdleDelayMs,
-        });
-      } else {
-        const existing = loadSyncOutboxState().items[resumeId];
-        const attempts = (existing?.attempts ?? 0) + 1;
-        const retryIn = computeRetryDelayMs();
-
-        setLocalSyncState(resumeId, "pending");
-        upsertOutboxItem(resumeId, {
-          state: "pending",
-          attempts,
-          nextAttemptAt: Date.now() + retryIn,
-        });
-      }
-
-      updateSyncTelemetry(resumeId, {
-        lastErrorAt: new Date().toISOString(),
-        lastErrorMessage: failure.message,
+    if (isNew) {
+      cloud = await DocumentApi.create({
+        id: resume.id,
+        type: "RESUME",
+        title: resume.basics.fullName || "Untitled Resume",
+        content: resume,
+        templateId: resume.templateId,
       });
-
-      return {
-        ok: false,
-        message: failure.message,
-        reason: failure.reason,
-      };
+    } else {
+      cloud = await DocumentApi.update(resume.id, {
+        title: resume.basics.fullName,
+        content: resume,
+        templateId: resume.templateId,
+        revision: resume.sync.revision,
+      });
     }
 
-    setLocalSyncState(resumeId, "synced");
-    clearOutboxItem(resumeId);
-    updateSyncTelemetry(resumeId, {
-      lastSuccessAt: new Date().toISOString(),
-      lastErrorAt: null,
-      lastErrorMessage: null,
-    });
-    emitResumeStorageUpdate();
+    const updated = applyCloudSyncMetadata(resume, cloud);
+    saveResume(updated);
+    SyncEngine.removeOutboxItem(resumeId);
+    SyncEngine.updateTelemetry(resumeId, { lastSuccessAt: new Date().toISOString() });
 
-    return {
-      ok: true,
-      message: "Resume synced successfully.",
-    };
-  } catch {
-    const existing = loadSyncOutboxState().items[resumeId];
-    const attempts = (existing?.attempts ?? 0) + 1;
-    const retryIn = computeRetryDelayMs();
+    return { ok: true, message: "Resume synced successfully." };
+  } catch (error: any) {
+    const isConflict = error.message.includes("Conflict");
+    setLocalSyncState(resumeId, isConflict ? "conflicted" : "pending");
 
-    setLocalSyncState(resumeId, "pending");
-    upsertOutboxItem(resumeId, {
-      state: "pending",
-      attempts,
-      nextAttemptAt: Date.now() + retryIn,
+    SyncEngine.upsertOutboxItem(resumeId, {
+      state: isConflict ? "conflicted" : "pending",
+      nextAttemptAt: Date.now() + (isConflict ? 60000 : workerIdleDelayMs),
     });
-    updateSyncTelemetry(resumeId, {
+
+    SyncEngine.updateTelemetry(resumeId, {
       lastErrorAt: new Date().toISOString(),
-      lastErrorMessage: "Could not reach sync service. Check your network and retry.",
+      lastErrorMessage: error.message,
     });
-    emitResumeStorageUpdate();
-
-    const nextDue = getNextDueOutboxItem();
-
-    if (workerEnabled && nextDue) {
-      scheduleWorkerTick(nextDue.delayMs);
-    }
 
     return {
       ok: false,
-      message: "Could not reach sync service. Check your network and retry.",
-      reason: "network",
+      message: error.message,
+      reason: isConflict ? "conflict" : "network",
     };
   }
 }
 
-export async function syncAllPendingResumes(): Promise<SyncResult> {
-  const resumes = loadResumeCollectionFromLocalStorage();
-  const pendingResumes = Object.values(resumes.items).filter(
-    (resume) => resume.sync.enabled && resume.sync.status !== "synced",
-  );
+function setLocalSyncState(resumeId: string, status: SyncStatus) {
+  const resume = loadResumeById(resumeId);
+  if (!resume) return;
+  saveResume({
+    ...resume,
+    sync: { ...resume.sync, status },
+  });
+}
 
-  if (pendingResumes.length === 0) {
-    return {
-      ok: true,
-      message: "No pending resumes to sync.",
-    };
-  }
-
-  let syncedCount = 0;
-
-  for (const resume of pendingResumes) {
-    const result = await syncResumeNow(resume.id, { force: false });
-
-    if (result.ok) {
-      syncedCount += 1;
-    }
-  }
-
+function applyCloudSyncMetadata(resume: ResumeData, record: CloudDocument): ResumeData {
   return {
-    ok: syncedCount === pendingResumes.length,
-    message:
-      syncedCount === pendingResumes.length
-        ? `Synced ${syncedCount} resume${syncedCount === 1 ? "" : "s"} to the cloud.`
-        : `Synced ${syncedCount} of ${pendingResumes.length} resumes to the cloud.`,
+    ...resume,
+    sync: {
+      ...resume.sync,
+      enabled: true,
+      status: "synced",
+      cloudResumeId: record.id,
+      lastSyncedAt: record.lastSyncedAt ?? record.updatedAt,
+      revision: record.revision,
+    },
   };
+}
+
+// --- Hydration / Merging ---
+
+export async function hydrateCloudResumeByIdToLocalStorage(
+  resumeId: string,
+): Promise<ResumeSyncResult> {
+  try {
+    const record = await DocumentApi.get(resumeId);
+    const merged = mergeCloudResumesIntoLocalStorage([record]);
+    return merged.ok
+      ? { ok: true, message: "Cloud resume loaded successfully." }
+      : { ok: false, message: "Unable to merge the cloud resume." };
+  } catch (error: any) {
+    return { ok: false, message: error.message };
+  }
 }
 
 export async function hydrateCloudResumesToLocalStorage(
   options?: HydrateCloudResumesOptions,
-): Promise<SyncResult> {
+): Promise<ResumeSyncResult> {
   if (!shouldHydrateCloudResumes(options)) {
-    return {
-      ok: true,
-      message: "Skipped cloud refresh because local cache is still fresh.",
-    };
+    return { ok: true, message: "Fresh enough." };
   }
 
-  const records = await fetchCloudResumeRecords(buildResumesListPath());
+  try {
+    const records = await DocumentApi.list("RESUME");
+    const merged = mergeCloudResumesIntoLocalStorage(records);
 
-  if (!records) {
-    return {
-      ok: false,
-      message: "Unable to load cloud resumes right now.",
-    };
+    setLastCloudHydrateMeta({
+      lastHydratedAt: Date.now(),
+      lastServerCursor: new Date().toISOString(),
+    });
+
+    return merged.ok
+      ? { ok: true, message: `Merged ${merged.mergedCount} resumes.` }
+      : { ok: false, message: "Merge failed." };
+  } catch (error: any) {
+    return { ok: false, message: error.message };
+  }
+}
+
+function mergeCloudResumesIntoLocalStorage(records: CloudDocument[]) {
+  let mergedCount = 0;
+  const collection = loadResumeCollectionFromLocalStorage();
+
+  for (const record of records) {
+    const cloudResume = parseResumeDataInput(record.content);
+    if (!cloudResume) continue;
+
+    const localResume = collection.items[cloudResume.id];
+    const localUpdatedAt = toTimestamp(localResume?.updatedAt);
+    const cloudUpdatedAt = toTimestamp(record.updatedAt);
+
+    if (!localResume || cloudUpdatedAt > localUpdatedAt) {
+      collection.items[cloudResume.id] = applyCloudSyncMetadata(cloudResume, record);
+      mergedCount += 1;
+    }
   }
 
-  const merged = mergeCloudResumesIntoLocalStorage(records);
-
-  if (!merged.ok) {
-    return {
-      ok: false,
-      message: "Unable to merge cloud resumes into local storage.",
-    };
+  if (mergedCount > 0) {
+    saveResumeCollectionToLocalStorage(collection);
+    window.dispatchEvent(new Event("storage"));
   }
 
-  setLastCloudHydrateMeta({
-    lastHydratedAt: Date.now(),
-    lastServerCursor: new Date().toISOString(),
-  });
+  return { ok: true, mergedCount };
+}
 
+// --- Telemetry Helpers ---
+
+export function getResumeSyncTelemetry(resumeId: string): ResumeSyncTelemetry {
+  return SyncEngine.getTelemetry(resumeId);
+}
+
+export function getResumeSyncTelemetryByIds(
+  resumeIds: string[],
+): Record<string, ResumeSyncTelemetry> {
+  const result: Record<string, ResumeSyncTelemetry> = {};
+  for (const id of resumeIds) result[id] = getResumeSyncTelemetry(id);
+  return result;
+}
+
+export function getWorkspaceSyncTelemetry() {
+  const outbox = SyncEngine.getOutbox();
+  const values = Object.values(outbox);
+  const maxAttempt = Math.max(...values.map((i) => i.updatedAt), 0);
   return {
-    ok: true,
-    message:
-      merged.mergedCount === 0
-        ? "No cloud resumes to merge."
-        : `Merged ${merged.mergedCount} cloud resume${merged.mergedCount === 1 ? "" : "s"}.`,
+    lastAttemptAt: maxAttempt ? new Date(maxAttempt).toISOString() : null,
+    lastSuccessAt: null, // Simplified for now
   };
 }
 
-export async function hydrateCloudResumeByIdToLocalStorage(resumeId: string): Promise<SyncResult> {
-  const records = await fetchCloudResumeRecords(`/resumes/${resumeId}`);
+// --- Lifecycle Actions ---
 
-  if (!records || records.length === 0) {
-    return {
-      ok: false,
-      message: "Cloud resume not found.",
-    };
-  }
-
-  const merged = mergeCloudResumesIntoLocalStorage(records);
-
-  if (!merged.ok) {
-    return {
-      ok: false,
-      message: "Unable to merge the cloud resume.",
-    };
-  }
-
-  return {
-    ok: true,
-    message: "Cloud resume loaded successfully.",
-  };
-}
-
-export function keepResumeLocalOnly(resumeId: string): SyncResult {
+export function keepResumeLocalOnly(resumeId: string): ResumeSyncResult {
   const resume = loadResumeById(resumeId);
-
-  if (!resume) {
-    return {
-      ok: false,
-      message: "Resume not found locally.",
-    };
-  }
-
+  if (!resume) return { ok: false, message: "Resume not found.", reason: "not-found" };
   saveResume({
     ...resume,
     sync: {
@@ -911,29 +359,39 @@ export function keepResumeLocalOnly(resumeId: string): SyncResult {
       enabled: false,
       status: "local-only",
       cloudResumeId: null,
+      revision: 1,
     },
   });
-
-  clearOutboxItem(resumeId);
-
-  emitResumeStorageUpdate();
-
-  return {
-    ok: true,
-    message: "Resume moved to local-only mode.",
-  };
+  SyncEngine.removeOutboxItem(resumeId);
+  return { ok: true, message: "Sync disabled for this resume." };
 }
 
-export async function resolveConflictUseLocal(resumeId: string): Promise<SyncResult> {
+
+export async function resolveConflictUseLocal(resumeId: string) {
   return syncResumeNow(resumeId, { force: true });
 }
 
-export async function resolveConflictUseCloud(resumeId: string): Promise<SyncResult> {
+export async function resolveConflictUseCloud(resumeId: string) {
   const result = await hydrateCloudResumeByIdToLocalStorage(resumeId);
-
-  if (result.ok) {
-    clearOutboxItem(resumeId);
-  }
-
+  if (result.ok) SyncEngine.removeOutboxItem(resumeId);
   return result;
+}
+
+// --- Internal Helpers ---
+
+function getCloudHydrateMeta() {
+  if (!isBrowser()) return { lastHydratedAt: 0 };
+  const raw = localStorage.getItem(CLOUD_HYDRATE_META_KEY);
+  return raw ? JSON.parse(raw) : { lastHydratedAt: 0 };
+}
+
+function setLastCloudHydrateMeta(meta: any) {
+  if (!isBrowser()) return;
+  localStorage.setItem(CLOUD_HYDRATE_META_KEY, JSON.stringify(meta));
+}
+
+function shouldHydrateCloudResumes(options?: HydrateCloudResumesOptions) {
+  if (options?.force) return true;
+  const minInterval = options?.minIntervalMs ?? DEFAULT_MIN_HYDRATE_INTERVAL_MS;
+  return Date.now() - getCloudHydrateMeta().lastHydratedAt >= minInterval;
 }

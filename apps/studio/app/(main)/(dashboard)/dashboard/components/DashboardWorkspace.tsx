@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, useEffect, useCallback, useSyncExternalStore } from "react";
 
@@ -19,6 +20,7 @@ import {
   createResume,
   deleteResumeById,
 } from "@/features/resume/services/resume-service";
+import { DocumentApi } from "@/features/documents/services/document-api";
 import { listSavedResumes } from "@/features/resume/services/resume-core";
 import { trackUsageEvent } from "@/features/analytics/services/usage-metrics";
 import { RESUME_STORAGE_UPDATED_EVENT } from "@/features/resume/services/local-storage";
@@ -112,8 +114,8 @@ const DashboardWorkspace = () => {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [syncDetailsTargetId, setSyncDetailsTargetId] = useState<string | null>(null);
 
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isRefreshingCloud, setIsRefreshingCloud] = useState(false);
-  const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [syncingResumeId, setSyncingResumeId] = useState<string | null>(null);
 
   const resumes = useSyncExternalStore(subscribe, getResumeSnapshot, () => EMPTY_RESUMES);
@@ -172,43 +174,64 @@ const DashboardWorkspace = () => {
 
   const handleRefreshCloud = useCallback(async () => {
     setIsRefreshingCloud(true);
-    setSyncNotice(null);
 
     try {
       const result = await hydrateCloudResumesToLocalStorage({ force: true });
-      setSyncNotice(result.message);
+      toast.info(result.message);
     } finally {
       setIsRefreshingCloud(false);
     }
   }, []);
 
-  const handleConfirmDelete = useCallback(() => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!deleteTargetId) return;
 
-    deleteResumeById(deleteTargetId);
-    trackUsageEvent({ event: "resume_deleted" });
-    setDeleteTargetId(null);
-  }, [deleteTargetId]);
+    setIsDeleting(true);
+
+    try {
+      if (deleteTarget?.sync.cloudResumeId) {
+        await DocumentApi.delete(deleteTargetId);
+      }
+
+      deleteResumeById(deleteTargetId);
+      trackUsageEvent({ event: "resume_deleted" });
+
+      toast.success("Resume deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete resume from cloud. Please try again.");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTargetId(null);
+    }
+  }, [deleteTargetId, deleteTarget]);
 
   const handleSyncNow = useCallback(async (resumeId: string) => {
     setSyncingResumeId(resumeId);
 
     const result = await syncResumeNow(resumeId);
 
-    setSyncNotice(result.message);
+    if (result.ok) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
+
     trackUsageEvent({
       event: result.ok ? "resume_sync_success" : "resume_sync_failed",
     });
+
     setSyncingResumeId(null);
   }, []);
 
   const handleKeepLocalOnly = useCallback((resumeId: string) => {
     const result = keepResumeLocalOnly(resumeId);
 
-    setSyncNotice(result.message);
+    toast.info(result.message);
+
     trackUsageEvent({
       event: result.ok ? "resume_sync_local_only" : "resume_sync_local_only_failed",
     });
+
     setSyncDetailsTargetId(null);
   }, []);
 
@@ -216,15 +239,26 @@ const DashboardWorkspace = () => {
     setSyncingResumeId(resumeId);
     const result = await resolveConflictUseLocal(resumeId);
 
-    setSyncNotice(result.message);
+    if (result.ok) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
+
     setSyncingResumeId(null);
   }, []);
 
   const handleResolveUseCloud = useCallback(async (resumeId: string) => {
     setSyncingResumeId(resumeId);
+
     const result = await resolveConflictUseCloud(resumeId);
 
-    setSyncNotice(result.message);
+    if (result.ok) {
+      toast.success(result.message);
+    } else {
+      toast.error(result.message);
+    }
+
     setSyncingResumeId(null);
   }, []);
 
@@ -248,23 +282,17 @@ const DashboardWorkspace = () => {
         onSyncDetails={setSyncDetailsTargetId}
       />
 
-      {syncNotice && (
-        <p className="text-muted rounded-2xl border border-zinc-700/20 bg-zinc-500/5 px-4 py-3 text-sm">
-          {syncNotice}
-        </p>
-      )}
-
       <DestructiveModal
         open={Boolean(deleteTargetId)}
         onConfirmAction={handleConfirmDelete}
         onCloseAction={() => setDeleteTargetId(null)}
+        loading={isDeleting}
         entityName={deleteTarget?.title ?? "resume"}
       />
 
       {shareTargetId && (
         <ShareResumeModal
           resumeId={shareTargetId}
-          onNotice={setSyncNotice}
           resumeTitle={shareTarget?.title}
           onClose={() => setShareTargetId(null)}
         />
@@ -273,7 +301,6 @@ const DashboardWorkspace = () => {
       {syncDetailsTargetId && syncTarget && (
         <SyncDetailsModal
           resume={syncTarget}
-          onNotice={setSyncNotice}
           onSyncNow={handleSyncNow}
           telemetry={syncTargetTelemetry}
           syncingResumeId={syncingResumeId}

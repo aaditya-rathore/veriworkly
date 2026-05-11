@@ -7,6 +7,7 @@ import { siteConfig } from "@/config/site";
 import { globalFontVariables } from "@veriworkly/ui";
 
 import { ThemeProvider } from "@/providers/theme-provider";
+import { Toaster } from "@/components/Toaster";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteConfig.url),
@@ -155,6 +156,7 @@ const RootLayout = ({
           storageKey="veriworkly-theme"
         >
           {children}
+          <Toaster position="bottom-right" expand={false} richColors />
         </ThemeProvider>
       </body>
     </html>

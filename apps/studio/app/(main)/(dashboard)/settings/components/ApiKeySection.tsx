@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 
 import { ApiRequestError, fetchApiData } from "@/utils/fetchApiData";
 
@@ -36,7 +37,6 @@ export default function ApiKeySection({ initialKeys, initialKeysLoaded }: ApiKey
   const [selectedScopes, setSelectedScopes] = useState<string[]>(["user:read"]);
   const [generatedKey, setGeneratedKey] = useState<GeneratedApiKeyRecord | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ApiKeyRecord | null>(null);
   const [deleteSubmitting, setDeleteSubmitting] = useState(false);
   const [rotateTarget, setRotateTarget] = useState<ApiKeyRecord | null>(null);
@@ -50,9 +50,8 @@ export default function ApiKeySection({ initialKeys, initialKeysLoaded }: ApiKey
       });
 
       setKeys(data);
-      setErrorMessage(null);
     } catch (error) {
-      setErrorMessage(resolveErrorMessage(error, "Failed to fetch API keys."));
+      toast.error(resolveErrorMessage(error, "Failed to fetch API keys."));
     } finally {
       setLoading(false);
     }
@@ -94,10 +93,10 @@ export default function ApiKeySection({ initialKeys, initialKeysLoaded }: ApiKey
       setRateLimit(20);
       setExpiresAt("");
       setSelectedScopes(["user:read"]);
-      setErrorMessage(null);
+      toast.success("API key created successfully.");
       void fetchKeys();
     } catch (error) {
-      setErrorMessage(resolveErrorMessage(error, "Failed to create API key."));
+      toast.error(resolveErrorMessage(error, "Failed to create API key."));
     } finally {
       setCreating(false);
     }
@@ -125,10 +124,10 @@ export default function ApiKeySection({ initialKeys, initialKeysLoaded }: ApiKey
 
       setGeneratedKey(data);
       setRotateTarget(null);
-      setErrorMessage(null);
+      toast.success("API key rotated successfully.");
       void fetchKeys();
     } catch (error) {
-      setErrorMessage(resolveErrorMessage(error, "Failed to rotate API key."));
+      toast.error(resolveErrorMessage(error, "Failed to rotate API key."));
     } finally {
       setRotateSubmitting(false);
     }
@@ -146,10 +145,10 @@ export default function ApiKeySection({ initialKeys, initialKeysLoaded }: ApiKey
       });
 
       setDeleteTarget(null);
-      setErrorMessage(null);
+      toast.success("API key deleted.");
       void fetchKeys();
     } catch (error) {
-      setErrorMessage(resolveErrorMessage(error, "Failed to delete API key."));
+      toast.error(resolveErrorMessage(error, "Failed to delete API key."));
     } finally {
       setDeleteSubmitting(false);
     }
@@ -159,9 +158,10 @@ export default function ApiKeySection({ initialKeys, initialKeysLoaded }: ApiKey
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
+      toast.success("Copied to clipboard");
       setTimeout(() => setCopiedId(null), 2000);
     } catch {
-      setErrorMessage("Failed to copy API key to clipboard.");
+      toast.error("Failed to copy API key to clipboard.");
     }
   };
 
@@ -191,11 +191,7 @@ export default function ApiKeySection({ initialKeys, initialKeysLoaded }: ApiKey
           onSubmitAction={handleCreateKey}
         />
 
-        {errorMessage ? (
-          <p className="rounded-md border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm text-red-500">
-            {errorMessage}
-          </p>
-        ) : null}
+
 
         {generatedKey && (
           <GeneratedApiKeyCard

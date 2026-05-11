@@ -1,4 +1,5 @@
 import type { ResumeFontFamilyId } from "@/types/resume-font";
+import type { SyncStatus } from "@/features/documents/services/sync-engine";
 
 export type ResumeSectionId =
   | "basics"
@@ -214,13 +215,14 @@ export interface ResumeCustomization {
   headingLineHeight: number;
 }
 
-export type ResumeSyncStatus = "local-only" | "pending" | "syncing" | "synced" | "conflicted";
+export type ResumeSyncStatus = SyncStatus;
 
 export interface ResumeSyncState {
   enabled: boolean;
   status: ResumeSyncStatus;
   cloudResumeId: string | null;
   lastSyncedAt: string | null;
+  revision: number;
 }
 
 export interface ResumeData {

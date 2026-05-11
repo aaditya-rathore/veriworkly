@@ -1,17 +1,31 @@
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/utils";
+
 interface FullScreenMessageProps {
   icon?: ReactNode;
   title: string;
   description?: string;
   action?: ReactNode;
+  className?: string;
 }
 
-const FullScreenMessage = ({ icon, title, action, description }: FullScreenMessageProps) => {
+const FullScreenMessage = ({
+  icon,
+  title,
+  action,
+  description,
+  className,
+}: FullScreenMessageProps) => {
   return (
-    <div className="bg-background surface-grid flex min-h-screen flex-col items-center justify-center space-y-6 p-6 text-center">
+    <div
+      className={cn(
+        "bg-background surface-grid flex min-h-screen flex-col items-center justify-center space-y-6 p-6 text-center",
+        className,
+      )}
+    >
       {icon ? (
-        <div className="bg-card border-border rounded-2xl border p-4 md:rounded-3xl md:p-6">
+        <div className="bg-card border-border rounded-2xl border p-4 shadow-sm md:rounded-3xl md:p-6">
           {icon}
         </div>
       ) : null}

@@ -244,6 +244,7 @@ export const defaultResume: ResumeData = {
     status: "local-only",
     cloudResumeId: null,
     lastSyncedAt: null,
+    revision: 1,
   },
   updatedAt: new Date().toISOString(),
 };

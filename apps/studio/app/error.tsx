@@ -1,7 +1,6 @@
 "use client";
 
-import { Button } from "@veriworkly/ui";
-import { Container } from "@veriworkly/ui";
+import { Container, Button } from "@veriworkly/ui";
 
 export default function Error({
   reset,

@@ -1,7 +1,6 @@
 import Link from "next/link";
 
-import { Button } from "@veriworkly/ui";
-import { Container } from "@veriworkly/ui";
+import { Button, Container } from "@veriworkly/ui";
 
 const NotFound = () => {
   return (

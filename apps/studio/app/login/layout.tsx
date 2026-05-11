@@ -7,6 +7,8 @@ import { siteConfig } from "@/config/site";
 
 import { Badge, Button } from "@veriworkly/ui";
 
+import { LoginFeatures } from "./component/LoginFeatures";
+
 const pageUrl = `${siteConfig.url}/login`;
 const pageOgImage = `${siteConfig.url}/og/login-page-og.png`;
 
@@ -69,27 +71,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
               </p>
             </div>
 
-            <div className="space-y-3">
-              <div className="border-border/80 bg-background/70 rounded-2xl border p-3">
-                <p className="text-foreground text-sm font-semibold">
-                  Master Profile + Derived Resumes
-                </p>
-
-                <p className="text-muted mt-1 text-sm">Edit once, propagate selected changes.</p>
-              </div>
-
-              <div className="border-border/80 bg-background/70 rounded-2xl border p-3">
-                <p className="text-foreground text-sm font-semibold">Share Links with Controls</p>
-
-                <p className="text-muted mt-1 text-sm">Expiry, password, view-only, PDF toggle.</p>
-              </div>
-
-              <div className="border-border/80 bg-background/70 rounded-2xl border p-3">
-                <p className="text-foreground text-sm font-semibold">Per-Resume Sync Toggle</p>
-
-                <p className="text-muted mt-1 text-sm">Cloud sync stays opt-in, default off.</p>
-              </div>
-            </div>
+            <LoginFeatures variant="sidebar" />
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">

@@ -53,7 +53,7 @@ function ModalContent({ children, className, ...props }: React.HTMLAttributes<HT
       )}
       {...props}
     >
-      <div className="mb-4 flex justify-center md:hidden">
+      <div className="mt-1 mb-4 flex justify-center md:hidden">
         <div className="bg-muted h-1.5 w-12 rounded-full" />
       </div>
 

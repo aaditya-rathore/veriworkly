@@ -20,7 +20,7 @@ const ResumeCanvas = ({
         <div className="custom-scrollbar overflow-x-auto bg-white/50 p-3 backdrop-blur md:p-6">
           <div
             id={sharePreviewId}
-            className="border-border/50 mx-auto max-w-212.5 min-w-175 rounded-2xl border text-black shadow-sm ring-1 ring-black/5 dark:ring-white/10"
+            className="border-border/50 mx-auto max-w-212.5 min-w-175 rounded-4xl border text-black shadow-sm ring-1 ring-black/5 dark:ring-white/10"
           >
             <Template resume={resume} className="" />
           </div>

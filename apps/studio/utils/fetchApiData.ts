@@ -18,9 +18,9 @@ export class ApiRequestError extends Error {
 
 export async function fetchApiData<T>(
   path: string,
-  options: RequestInit & { errorMessage?: string } = {},
+  options: RequestInit & { errorMessage?: string; nullOnNotFound?: boolean } = {},
 ): Promise<T> {
-  const { errorMessage, ...fetchOptions } = options;
+  const { errorMessage, nullOnNotFound, ...fetchOptions } = options;
 
   const url = backendApiUrl(path);
 
@@ -34,6 +34,10 @@ export async function fetchApiData<T>(
   });
 
   if (!response.ok) {
+    if (response.status === 404 && nullOnNotFound) {
+      return null as unknown as T;
+    }
+
     const errorData = await response.json().catch(() => ({}));
     const message = errorMessage || errorData.message || `Request failed: ${response.status}`;
 

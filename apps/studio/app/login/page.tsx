@@ -2,23 +2,23 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { authClient } from "@/lib/auth-client";
 
-import { Card } from "@veriworkly/ui";
-import { Input } from "@veriworkly/ui";
-import { Badge } from "@veriworkly/ui";
-import { Button } from "@veriworkly/ui";
+import { Input, Badge, Button } from "@veriworkly/ui";
 
 import OtpForm from "./component/OtpForm";
 
+import { AuthCard } from "./component/AuthCard";
+import { LoginFeatures } from "./component/LoginFeatures";
+
+import { toast } from "sonner";
+import { authClient } from "@/lib/auth-client";
+
 const LoginPage = () => {
-  const [otp, setOtp] = useState("");
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [sentTo, setSentTo] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,97 +26,80 @@ const LoginPage = () => {
     if (isLoading || !email) return;
 
     setIsLoading(true);
-    setError(null);
 
-    const { error: authError } = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: "sign-in",
-    });
+    try {
+      const { error: authError } = await authClient.emailOtp.sendVerificationOtp({
+        email,
+        type: "sign-in",
+      });
 
-    if (authError) {
-      setError(authError.message || "Failed to send code. Please try again.");
+      if (authError) {
+        toast.error(authError.message || "Failed to send code. Please try again.");
+        return;
+      }
+
+      setSentTo(email);
+      setSent(true);
+      toast.success("Verification code sent to your email!");
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to fetch. Please check your connection.");
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    setSentTo(email);
-    setSent(true);
-    setIsLoading(false);
   };
 
-  if (sent) return <OtpForm sentTo={sentTo} setSent={setSent} otp={otp} setOtp={setOtp} />;
+  if (sent) return <OtpForm sentTo={sentTo} setSent={setSent} />;
 
   return (
-    <Card className="relative min-h-140 overflow-hidden rounded-4xl p-7">
-      <div className="bg-accent/12 pointer-events-none absolute -top-20 -left-16 h-52 w-52 rounded-full blur-3xl" />
+    <AuthCard blurPosition="top-left">
+      <div className="space-y-4">
+        <Badge className="bg-background/70">Optional Login</Badge>
 
-      <div className="relative space-y-6">
-        <div className="space-y-4">
-          <Badge className="bg-background/70">Optional Login</Badge>
+        <div className="space-y-3">
+          <h1 className="text-foreground text-3xl font-semibold tracking-tight">
+            Use without login. Sign in for extras.
+          </h1>
 
-          <div className="space-y-3">
-            <h1 className="text-foreground text-3xl font-semibold tracking-tight">
-              Use without login. Sign in for extras.
-            </h1>
-
-            <p className="text-muted max-w-md text-sm md:text-base">
-              Resume building is fully available without an account. Login adds sync and advanced
-              sharing features.
-            </p>
-          </div>
+          <p className="text-muted max-w-md text-sm md:text-base">
+            Resume building is fully available without an account. Login adds sync and advanced
+            sharing features.
+          </p>
         </div>
-
-        <div className="border-border/80 bg-background/65 rounded-2xl border p-3 backdrop-blur">
-          <ul className="text-muted text-sm leading-6">
-            <li>1. Master profile + derived resumes.</li>
-            <li>2. Share links with expiry, password, and view controls.</li>
-            <li>3. Per-resume sync toggle (default off).</li>
-          </ul>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="email" className="text-foreground text-sm font-medium">
-              Email
-            </label>
-
-            <Input
-              required
-              id="email"
-              type="email"
-              value={email}
-              disabled={isLoading}
-              placeholder="hello@veriworkly.com"
-              onChange={(e) => {
-                setEmail(e.target.value);
-                if (error) setError(null);
-              }}
-            />
-          </div>
-
-          {error && (
-            <section
-              role="alert"
-              aria-live="polite"
-              className="rounded-2xl border border-red-200/60 bg-red-50 p-3 text-sm text-red-700 dark:border-red-900/80 dark:bg-red-950/40 dark:text-red-300"
-            >
-              {error}
-            </section>
-          )}
-
-          <Button size="md" type="submit" className="w-full" disabled={isLoading || !email}>
-            {isLoading ? "Sending Code..." : "Send Sign-in Code"}
-          </Button>
-        </form>
-
-        <p className="text-muted text-center text-xs md:text-sm">
-          Want to continue immediately?
-          <Link href="/dashboard" className="text-foreground ml-1 font-semibold hover:opacity-80">
-            Open Dashboard (No Login)
-          </Link>
-        </p>
       </div>
-    </Card>
+
+      <LoginFeatures variant="compact" />
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-foreground text-sm font-medium">
+            Email
+          </label>
+
+          <Input
+            required
+            autoFocus
+            id="email"
+            type="email"
+            value={email}
+            autoComplete="email"
+            disabled={isLoading}
+            placeholder="hello@veriworkly.com"
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <Button size="md" type="submit" className="w-full" disabled={isLoading || !email}>
+          {isLoading ? "Sending Code..." : "Send Sign-in Code"}
+        </Button>
+      </form>
+
+      <p className="text-muted text-center text-xs md:text-sm">
+        Want to continue immediately?
+        <Link href="/dashboard" className="text-foreground ml-1 font-semibold hover:opacity-80">
+          Open Dashboard (No Login)
+        </Link>
+      </p>
+    </AuthCard>
   );
 };
 
