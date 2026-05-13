@@ -1,289 +1,298 @@
 "use client";
 
+/* eslint-disable @next/next/no-img-element */
+
 import React from "react";
-import type { ResumeData, ResumeCustomSection } from "@/types/resume";
+import type { ResumeData } from "@/types/resume";
 import type { TemplateRenderProps } from "@/types/template";
 import {
-  RESUME_LAYOUT,
   RESUME_PAGE_HEIGHT_PX,
   RESUME_PAGE_WIDTH_PX,
 } from "@/features/resume/constants/resume-layout";
 import { FONT_FAMILY_MAP } from "@/features/documents/constants/fonts";
-import { formatDate } from "@/features/documents/utils/format-date";
-import { stripEmoji } from "@/features/documents/utils/strip-emoji";
-import { isSectionVisible } from "@/features/documents/utils/section-helpers";
+import { formatDateRange } from "@/features/resume/services/resume-formatters";
+import {
+  cleanResumeText,
+  getContactItems,
+  getEducationMeta,
+  getEducationTitle,
+  getLinkDisplayText,
+  getProjectLinkText,
+  getProjectTitle,
+  getResumeRenderStyle,
+  hasCustomItemContent,
+  hasCustomSectionContent,
+  hasEducationContent,
+  hasExperienceContent,
+  hasProjectContent,
+  hasResumeSectionContent,
+  hasSkillGroupContent,
+  normalizeLinkHref,
+} from "@/features/documents/rendering/resume-rendering";
+import { SOCIAL_ICON_SRC_BY_TYPE } from "@/templates/shared/social-icons";
+
+function Section({
+  children,
+  resume,
+  title,
+}: {
+  children: React.ReactNode;
+  resume: ResumeData;
+  title: string;
+}) {
+  const style = getResumeRenderStyle(resume);
+
+  return (
+    <section
+      className="break-inside-avoid-page"
+      style={{
+        backgroundColor: style.sectionBackgroundColor,
+        marginBottom: Math.max(10, style.sectionSpacing * 0.6),
+      }}
+    >
+      <div
+        className="mb-2 border-b pb-1 text-[0.72rem] leading-none font-bold tracking-[0.16em] uppercase"
+        style={{ borderColor: style.borderColor, color: style.accentColor }}
+      >
+        {title}
+      </div>
+      <div className="space-y-2.5">{children}</div>
+    </section>
+  );
+}
 
 export const CompactAtsWeb: React.FC<TemplateRenderProps> = ({ resume }) => {
-  const {
-    basics,
-    experience,
-    education,
-    projects,
-    skills,
-    summary,
-    customization,
-    sections,
-    customSections,
-    links,
-  } = resume;
-
-  const showBasics = isSectionVisible(sections, "basics") && Boolean(basics);
-  const showSummary = isSectionVisible(sections, "summary") && summary;
-  const showExperience = isSectionVisible(sections, "experience") && experience?.length > 0;
-  const showEducation = isSectionVisible(sections, "education") && education?.length > 0;
-  const showProjects = isSectionVisible(sections, "projects") && projects?.length > 0;
-  const showSkills = isSectionVisible(sections, "skills") && skills?.length > 0;
-
-  const bodyLineHeight = customization?.bodyLineHeight || 1.5;
+  const style = getResumeRenderStyle(resume);
+  const pagePadding = Math.max(24, style.pagePadding * 0.85);
+  const contactItems = getContactItems(resume.basics);
+  const renderedLinks = resume.links.items.filter((link) => normalizeLinkHref(link.url));
+  const visibleExperience = resume.experience.filter(hasExperienceContent);
+  const visibleEducation = resume.education.filter(hasEducationContent);
+  const visibleProjects = resume.projects.filter(hasProjectContent);
+  const visibleSkills = resume.skills.filter(hasSkillGroupContent);
+  const visibleCustomSections = resume.customSections.filter(
+    (section) => hasResumeSectionContent(resume, section.kind) && hasCustomSectionContent(section),
+  );
 
   return (
     <div
       id="resume-container"
-      className="mx-auto bg-white"
+      className="resume-page-preview mx-auto bg-white text-[0.875rem]"
       style={{
+        "--resume-page-height": `${RESUME_PAGE_HEIGHT_PX}px`,
+        "--resume-page-margin": `${pagePadding}px`,
         width: `${RESUME_PAGE_WIDTH_PX}px`,
-        minHeight: `${RESUME_PAGE_HEIGHT_PX}px`,
-        padding: `${RESUME_LAYOUT.pagePadding}px`,
-        color: "#000",
-        fontFamily:
-          FONT_FAMILY_MAP[customization?.fontFamily as keyof typeof FONT_FAMILY_MAP] ||
-          "Arial, Helvetica, sans-serif",
-        fontSize: "10pt",
-        lineHeight: bodyLineHeight,
-      }}
+        minHeight: `${RESUME_PAGE_HEIGHT_PX * 2}px`,
+        padding: `${pagePadding}px`,
+        backgroundColor: style.pageBackgroundColor,
+        color: style.textColor,
+        fontFamily: FONT_FAMILY_MAP[style.fontFamily],
+        lineHeight: style.bodyLineHeight,
+      } as React.CSSProperties}
     >
-      {/* Header */}
-      {showBasics && basics && (
-        <div style={{ marginBottom: "12pt", paddingBottom: "6pt", borderBottom: "1px solid #000" }}>
-          <div style={{ marginBottom: "3pt" }}>
-            <div style={{ fontWeight: "bold", fontSize: "14pt", marginBottom: "2pt" }}>
-              {stripEmoji(basics.fullName || "Your Name")}
-            </div>
-            {(basics.headline || basics.role) && (
-              <div style={{ fontSize: "11pt", marginBottom: "2pt" }}>
-                {stripEmoji(basics.headline || basics.role)}
+      {(hasResumeSectionContent(resume, "basics") ||
+        hasResumeSectionContent(resume, "links")) && (
+        <header className="mb-4 border-b pb-3" style={{ borderColor: style.borderColor }}>
+          {hasResumeSectionContent(resume, "basics") && (
+            <>
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h1
+                  className="text-2xl leading-tight font-bold"
+                  style={{ color: style.accentColor }}
+                >
+                  {cleanResumeText(resume.basics.fullName) || "Your Name"}
+                </h1>
+                {(resume.basics.headline || resume.basics.role) && (
+                  <p className="text-sm font-semibold" style={{ color: style.mutedTextColor }}>
+                    {cleanResumeText(resume.basics.headline || resume.basics.role)}
+                  </p>
+                )}
               </div>
-            )}
-          </div>
 
-          <div style={{ fontSize: "9pt", marginBottom: "2pt" }}>
-            {basics.email && <span>{stripEmoji(basics.email)}</span>}
-            {basics.phone && basics.email && <span> | </span>}
-            {basics.phone && <span>{stripEmoji(basics.phone)}</span>}
-            {basics.location && (basics.email || basics.phone) && <span> | </span>}
-            {basics.location && <span>{stripEmoji(basics.location)}</span>}
-          </div>
+              {contactItems.length > 0 && (
+                <div
+                  className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-xs"
+                  style={{ color: style.mutedTextColor }}
+                >
+                  {contactItems.map((item, index) => (
+                    <React.Fragment key={item.key}>
+                      {index > 0 && <span>|</span>}
+                      {item.href ? <a href={item.href}>{item.label}</a> : <span>{item.label}</span>}
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
 
-          {links?.items?.length > 0 && (
-            <div style={{ fontSize: "9pt" }}>
-              {links.items.map((link, index) => (
-                <span key={index}>
-                  {index > 0 && " | "}
-                  {link.url}
-                </span>
+          {hasResumeSectionContent(resume, "links") && renderedLinks.length > 0 && (
+            <div
+              className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs"
+              style={{ color: style.mutedTextColor }}
+            >
+              {renderedLinks.map((link, index) => (
+                <React.Fragment key={link.id || index}>
+                  {index > 0 && <span>|</span>}
+                  <a
+                    className="inline-flex items-center gap-1 leading-none"
+                    href={normalizeLinkHref(link.url)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {resume.links.displayMode !== "url" && (
+                      <img
+                        alt=""
+                        aria-hidden="true"
+                        className="size-3 shrink-0"
+                        src={SOCIAL_ICON_SRC_BY_TYPE[link.type] || SOCIAL_ICON_SRC_BY_TYPE.custom}
+                      />
+                    )}
+                    {resume.links.displayMode !== "icon" &&
+                      getLinkDisplayText(link, resume.links.displayMode)}
+                  </a>
+                </React.Fragment>
               ))}
             </div>
           )}
-        </div>
+        </header>
       )}
 
-      {/* Summary */}
-      {showSummary && (
-        <div style={{ marginBottom: "10pt" }}>
-          <div
-            style={{
-              fontWeight: "bold",
-              fontSize: "11pt",
-              marginBottom: "4pt",
-              textTransform: "uppercase",
-            }}
-          >
-            Summary
-          </div>
-          <div style={{ fontSize: "10pt" }}>{stripEmoji(summary)}</div>
-        </div>
+      {hasResumeSectionContent(resume, "summary") && (
+        <Section title="Summary" resume={resume}>
+          <p>{cleanResumeText(resume.summary)}</p>
+        </Section>
       )}
 
-      {/* Experience */}
-      {showExperience && (
-        <div style={{ marginBottom: "10pt" }}>
-          <div
-            style={{
-              fontWeight: "bold",
-              fontSize: "11pt",
-              marginBottom: "4pt",
-              textTransform: "uppercase",
-            }}
-          >
-            Experience
-          </div>
-          <div style={{ fontSize: "10pt" }}>
-            {experience.map((exp, index) => (
-              <div key={exp.id} style={{ marginBottom: index < experience.length - 1 ? "6pt" : 0 }}>
-                <div style={{ fontWeight: "bold", marginBottom: "2pt" }}>
-                  {stripEmoji(exp.role)}
-                  {exp.company && ` at ${stripEmoji(exp.company)}`}
-                </div>
-                {exp.location && (
-                  <div style={{ marginBottom: "2pt", fontSize: "9pt" }}>
-                    {stripEmoji(exp.location)}
-                  </div>
-                )}
-                <div style={{ marginBottom: "2pt", fontSize: "9pt" }}>
-                  {stripEmoji(formatDate(exp.startDate))} –{" "}
-                  {exp.current ? "Present" : stripEmoji(formatDate(exp.endDate))}
-                </div>
-                {exp.summary && (
-                  <div style={{ marginBottom: "2pt" }}>{stripEmoji(exp.summary)}</div>
-                )}
-                {exp.highlights?.length > 0 && (
-                  <ul style={{ marginLeft: "20pt", marginBottom: "2pt", marginTop: "2pt" }}>
-                    {exp.highlights.map((highlight, hIndex) => (
-                      <li key={hIndex}>{stripEmoji(highlight)}</li>
-                    ))}
-                  </ul>
+      {hasResumeSectionContent(resume, "experience") && (
+        <Section title="Experience" resume={resume}>
+          {visibleExperience.map((item) => (
+            <article key={item.id} className="break-inside-avoid space-y-1">
+              <div className="flex justify-between gap-4">
+                <h3 className="font-bold" style={{ color: style.sectionHeadingColor }}>
+                  {cleanResumeText(item.role) || "Role"}
+                </h3>
+                <p className="shrink-0 text-xs" style={{ color: style.mutedTextColor }}>
+                  {formatDateRange(item.startDate, item.endDate, item.current)}
+                </p>
+              </div>
+              <p className="text-xs font-semibold" style={{ color: style.mutedTextColor }}>
+                {[cleanResumeText(item.company), cleanResumeText(item.location)]
+                  .filter(Boolean)
+                  .join(" | ")}
+              </p>
+              {item.summary && <p>{cleanResumeText(item.summary)}</p>}
+              {item.highlights.length > 0 && (
+                <ul className="list-disc space-y-0.5 pl-5">
+                  {item.highlights.map((highlight, index) => (
+                    <li key={index}>{cleanResumeText(highlight)}</li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </Section>
+      )}
+
+      {hasResumeSectionContent(resume, "education") && (
+        <Section title="Education" resume={resume}>
+          {visibleEducation.map((item) => (
+            <article key={item.id} className="break-inside-avoid space-y-1">
+              <div className="flex justify-between gap-4">
+                <h3 className="font-bold" style={{ color: style.sectionHeadingColor }}>
+                  {getEducationTitle(item) || "Education"}
+                </h3>
+                <p className="shrink-0 text-xs" style={{ color: style.mutedTextColor }}>
+                  {getEducationMeta(item)}
+                </p>
+              </div>
+              {item.summary && <p>{cleanResumeText(item.summary)}</p>}
+            </article>
+          ))}
+        </Section>
+      )}
+
+      {hasResumeSectionContent(resume, "projects") && (
+        <Section title="Projects" resume={resume}>
+          {visibleProjects.map((item) => (
+            <article key={item.id} className="break-inside-avoid space-y-1">
+              <div className="flex justify-between gap-4">
+                <h3 className="font-bold" style={{ color: style.sectionHeadingColor }}>
+                  {getProjectTitle(item) || "Project"}
+                </h3>
+                {normalizeLinkHref(item.link) && (
+                  <a
+                    className="shrink-0 text-xs"
+                    href={normalizeLinkHref(item.link)}
+                    style={{ color: style.mutedTextColor }}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {getProjectLinkText(item)}
+                  </a>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
+              {item.skills?.length > 0 && (
+                <p className="text-xs font-semibold" style={{ color: style.mutedTextColor }}>
+                  {item.skills.map((skill) => cleanResumeText(skill)).filter(Boolean).join(", ")}
+                </p>
+              )}
+              {item.summary && <p>{cleanResumeText(item.summary)}</p>}
+              {item.highlights.length > 0 && (
+                <ul className="list-disc space-y-0.5 pl-5">
+                  {item.highlights.map((highlight, index) => (
+                    <li key={index}>{cleanResumeText(highlight)}</li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </Section>
       )}
 
-      {/* Education */}
-      {showEducation && (
-        <div style={{ marginBottom: "10pt" }}>
-          <div
-            style={{
-              fontWeight: "bold",
-              fontSize: "11pt",
-              marginBottom: "4pt",
-              textTransform: "uppercase",
-            }}
-          >
-            Education
-          </div>
-          <div style={{ fontSize: "10pt" }}>
-            {education.map((edu, index) => (
-              <div key={edu.id} style={{ marginBottom: index < education.length - 1 ? "6pt" : 0 }}>
-                <div style={{ fontWeight: "bold", marginBottom: "2pt" }}>
-                  {stripEmoji(edu.studyType || edu.area)}
-                  {edu.institution && ` – ${stripEmoji(edu.institution)}`}
-                </div>
-                <div style={{ fontSize: "9pt", marginBottom: "2pt" }}>
-                  {stripEmoji(formatDate(edu.startDate))} – {stripEmoji(formatDate(edu.endDate))}
-                </div>
-                {edu.score && <div style={{ fontSize: "9pt" }}>GPA: {stripEmoji(edu.score)}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
+      {hasResumeSectionContent(resume, "skills") && (
+        <Section title="Skills" resume={resume}>
+          {visibleSkills.map((skill) => (
+            <p key={skill.id || skill.name}>
+              <strong>{cleanResumeText(skill.name)}:</strong>{" "}
+              {skill.keywords.map((keyword) => cleanResumeText(keyword)).filter(Boolean).join(", ")}
+            </p>
+          ))}
+        </Section>
       )}
 
-      {/* Projects */}
-      {showProjects && (
-        <div style={{ marginBottom: "10pt" }}>
-          <div
-            style={{
-              fontWeight: "bold",
-              fontSize: "11pt",
-              marginBottom: "4pt",
-              textTransform: "uppercase",
-            }}
-          >
-            Projects
-          </div>
-          <div style={{ fontSize: "10pt" }}>
-            {projects.map((project, index) => (
-              <div
-                key={project.id}
-                style={{ marginBottom: index < projects.length - 1 ? "6pt" : 0 }}
-              >
-                <div style={{ fontWeight: "bold", marginBottom: "2pt" }}>
-                  {stripEmoji(project.name)}
-                  {project.url && ` – ${project.url}`}
-                </div>
-                {project.description && (
-                  <div style={{ marginBottom: "2pt" }}>{stripEmoji(project.description)}</div>
-                )}
-                {project.highlights?.length > 0 && (
-                  <ul style={{ marginLeft: "20pt", marginTop: "2pt" }}>
-                    {project.highlights.map((highlight, hIndex) => (
-                      <li key={hIndex}>{stripEmoji(highlight)}</li>
-                    ))}
-                  </ul>
+      {visibleCustomSections.map((section) => (
+        <Section key={section.id} title={cleanResumeText(section.title)} resume={resume}>
+          {section.items.filter(hasCustomItemContent).map((item) => (
+            <article key={item.id} className="break-inside-avoid space-y-1">
+              <div className="flex justify-between gap-4">
+                <h3 className="font-bold" style={{ color: style.sectionHeadingColor }}>
+                  {cleanResumeText(item.name) || "Item"}
+                </h3>
+                {item.date && (
+                  <p className="shrink-0 text-xs" style={{ color: style.mutedTextColor }}>
+                    {cleanResumeText(item.date)}
+                  </p>
                 )}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Skills */}
-      {showSkills && (
-        <div style={{ marginBottom: "10pt" }}>
-          <div
-            style={{
-              fontWeight: "bold",
-              fontSize: "11pt",
-              marginBottom: "4pt",
-              textTransform: "uppercase",
-            }}
-          >
-            Skills
-          </div>
-          <div style={{ fontSize: "10pt" }}>
-            {skills.map((skill, index) => (
-              <span key={skill.name}>
-                {index > 0 && ", "}
-                {stripEmoji(skill.name)}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Custom Sections */}
-      {customSections?.map((section) => (
-        <div key={section.id} style={{ marginBottom: "10pt" }}>
-          <div
-            style={{
-              fontWeight: "bold",
-              fontSize: "11pt",
-              marginBottom: "4pt",
-              textTransform: "uppercase",
-            }}
-          >
-            {section.title}
-          </div>
-          <div style={{ fontSize: "10pt" }}>
-            {section.items.map((item, itemIndex) => (
-              <div
-                key={item.id}
-                style={{ marginBottom: itemIndex < section.items.length - 1 ? "6pt" : 0 }}
-              >
-                <div style={{ fontWeight: "bold", marginBottom: "2pt" }}>
-                  {stripEmoji(item.name)}
-                  {item.date && ` – ${stripEmoji(item.date)}`}
-                </div>
-                {item.issuer && (
-                  <div style={{ marginBottom: "2pt", fontSize: "9pt" }}>
-                    {stripEmoji(item.issuer)}
-                  </div>
-                )}
-                {item.description && (
-                  <div style={{ marginBottom: "2pt" }}>{stripEmoji(item.description)}</div>
-                )}
-                {item.details?.length > 0 && (
-                  <ul style={{ marginLeft: "20pt", marginTop: "2pt" }}>
-                    {item.details.map((detail, dIndex) => (
-                      <li key={dIndex}>{stripEmoji(detail)}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+              {[cleanResumeText(item.issuer), cleanResumeText(item.link)].filter(Boolean).length >
+                0 && (
+                <p className="text-xs font-semibold" style={{ color: style.mutedTextColor }}>
+                  {[cleanResumeText(item.issuer), cleanResumeText(item.link)]
+                    .filter(Boolean)
+                    .join(" | ")}
+                </p>
+              )}
+              {item.description && <p>{cleanResumeText(item.description)}</p>}
+              {item.details.length > 0 && (
+                <ul className="list-disc space-y-0.5 pl-5">
+                  {item.details.map((detail, index) => (
+                    <li key={index}>{cleanResumeText(detail)}</li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </Section>
       ))}
     </div>
   );

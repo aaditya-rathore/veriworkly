@@ -104,8 +104,9 @@ const VolunteerSection = ({
               />
             </Field>
 
-            <Field label="Date / period">
+            <Field label="Date (YYYY-MM)">
               <Input
+                type="month"
                 onChange={(event) =>
                   updateCustomSectionItem("volunteer", safeVolunteerIndex, {
                     date: event.target.value,

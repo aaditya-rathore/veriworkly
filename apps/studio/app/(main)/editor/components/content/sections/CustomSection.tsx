@@ -107,6 +107,8 @@ const CustomSection = ({
             </Field>
             <Field label="Link (optional)">
               <Input
+                placeholder="https://..."
+                type="url"
                 onChange={(event) =>
                   updateCustomSectionItem("custom", safeCustomItemIndex, {
                     link: event.target.value,

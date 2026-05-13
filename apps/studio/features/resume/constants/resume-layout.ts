@@ -1,5 +1,12 @@
 export const RESUME_PAGE_WIDTH_PX = 794;
 export const RESUME_PAGE_HEIGHT_PX = 1122;
+export const RESUME_PDF_SCALE = 72 / 96;
+export const RESUME_PAGE_WIDTH_PT = RESUME_PAGE_WIDTH_PX * RESUME_PDF_SCALE;
+export const RESUME_PAGE_HEIGHT_PT = RESUME_PAGE_HEIGHT_PX * RESUME_PDF_SCALE;
+
+export function pxToPt(value: number): number {
+  return value * RESUME_PDF_SCALE;
+}
 
 export const RESUME_LAYOUT = {
   pagePadding: 32,

@@ -80,7 +80,7 @@ const AdvancedThemeSettings = ({
 
           <SettingsColor
             compact
-            label="Section heading color"
+            label="Item heading color"
             onChange={(event) => onUpdateCustomization({ sectionHeadingColor: event.target.value })}
             value={customization.sectionHeadingColor}
           />
@@ -96,19 +96,6 @@ const AdvancedThemeSettings = ({
             }
             step={0.05}
             value={customization.bodyLineHeight}
-          />
-
-          <SettingsRange
-            label={`Heading line-height (${customization.headingLineHeight.toFixed(2)})`}
-            max={1.6}
-            min={1}
-            onChange={(event) =>
-              onUpdateCustomization({
-                headingLineHeight: Number(event.target.value),
-              })
-            }
-            step={0.05}
-            value={customization.headingLineHeight}
           />
 
           <div className="md:col-span-2">

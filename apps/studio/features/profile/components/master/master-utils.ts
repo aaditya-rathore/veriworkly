@@ -17,6 +17,11 @@ import type {
 } from "@/types/resume";
 
 import { fontOptions } from "@/features/documents/constants/fonts";
+import {
+  isMonthDate,
+  isTenDigitPhone,
+  isYearDate,
+} from "@/features/resume/schemas/resume-validation-rules";
 
 export const linkTypes = ["github", "linkedin", "portfolio"] as const;
 export const fontFamilies = fontOptions.map((font) => font.value);
@@ -111,6 +116,10 @@ export function validateMasterProfileForSave(profile: MasterProfileData) {
     issues.push("Basics email must be a valid email address.");
   }
 
+  if (!isTenDigitPhone(profile.basics.phone.trim())) {
+    issues.push("Basics phone must have exactly 10 digits.");
+  }
+
   for (const link of profile.links.items) {
     if (!isValidAbsoluteUrl(link.url.trim())) {
       issues.push(`Link \"${link.label || link.type}\" must be a valid URL.`);
@@ -125,9 +134,31 @@ export function validateMasterProfileForSave(profile: MasterProfileData) {
     }
   }
 
+  for (const experience of profile.experience) {
+    if (
+      !isMonthDate(experience.startDate) ||
+      (!experience.current && !isMonthDate(experience.endDate))
+    ) {
+      issues.push(`Experience "${experience.role || "Untitled"}" must use YYYY-MM dates.`);
+      break;
+    }
+  }
+
+  for (const education of profile.education) {
+    if (!isYearDate(education.startDate) || (!education.current && !isYearDate(education.endDate))) {
+      issues.push(`Education "${education.degree || "Untitled"}" must use year-only dates.`);
+      break;
+    }
+  }
+
   for (const award of profile.awards) {
     if (award.website?.trim() && !isValidAbsoluteUrl(award.website.trim())) {
       issues.push(`Award \"${award.title || "Untitled"}\" has an invalid website URL.`);
+      break;
+    }
+
+    if (!isMonthDate(award.date)) {
+      issues.push(`Award \"${award.title || "Untitled"}\" must use a YYYY-MM date.`);
       break;
     }
   }
@@ -137,6 +168,11 @@ export function validateMasterProfileForSave(profile: MasterProfileData) {
       issues.push(`Certificate \"${certificate.title || "Untitled"}\" has an invalid website URL.`);
       break;
     }
+
+    if (!isMonthDate(certificate.date)) {
+      issues.push(`Certificate \"${certificate.title || "Untitled"}\" must use a YYYY-MM date.`);
+      break;
+    }
   }
 
   for (const publication of profile.publications) {
@@ -144,11 +180,31 @@ export function validateMasterProfileForSave(profile: MasterProfileData) {
       issues.push(`Publication \"${publication.title || "Untitled"}\" has an invalid website URL.`);
       break;
     }
+
+    if (!isMonthDate(publication.date)) {
+      issues.push(`Publication \"${publication.title || "Untitled"}\" must use a YYYY-MM date.`);
+      break;
+    }
+  }
+
+  for (const volunteer of profile.volunteer) {
+    if (
+      !isMonthDate(volunteer.startDate) ||
+      (!volunteer.current && !isMonthDate(volunteer.endDate))
+    ) {
+      issues.push(`Volunteer "${volunteer.organization || "Untitled"}" must use YYYY-MM dates.`);
+      break;
+    }
   }
 
   for (const reference of profile.references) {
     if (reference.email?.trim() && !isValidEmail(reference.email.trim())) {
       issues.push(`Reference \"${reference.name || "Unnamed"}\" has an invalid email.`);
+      break;
+    }
+
+    if (reference.phone?.trim() && !isTenDigitPhone(reference.phone.trim())) {
+      issues.push(`Reference \"${reference.name || "Unnamed"}\" phone must have exactly 10 digits.`);
       break;
     }
   }
@@ -199,7 +255,7 @@ export function sanitizeMasterProfileForSave(profile: MasterProfileData): Master
       role: profile.basics.role.trim(),
       headline: profile.basics.headline.trim(),
       email: profile.basics.email.trim().toLowerCase(),
-      phone: profile.basics.phone.trim(),
+      phone: profile.basics.phone.replace(/\D/g, "").slice(0, 10),
       location: profile.basics.location.trim(),
     },
     links: {
@@ -214,7 +270,20 @@ export function sanitizeMasterProfileForSave(profile: MasterProfileData): Master
       name: item.name.trim(),
       role: item.role.trim(),
       link: normalizeAbsoluteUrl(item.link),
+      linkLabel: item.linkLabel?.trim() || "Link",
+      showLinkAsText: item.showLinkAsText ?? true,
       summary: item.summary.trim(),
+      skills: item.skills ?? [],
+    })),
+    experience: profile.experience.map((item) => ({
+      ...item,
+      startDate: item.startDate.trim(),
+      endDate: item.current ? "" : item.endDate.trim(),
+    })),
+    education: profile.education.map((item) => ({
+      ...item,
+      startDate: item.startDate.replace(/\D/g, "").slice(0, 4),
+      endDate: item.current ? "" : item.endDate.replace(/\D/g, "").slice(0, 4),
     })),
     awards: profile.awards.map((item) => ({
       ...item,
@@ -244,7 +313,12 @@ export function sanitizeMasterProfileForSave(profile: MasterProfileData): Master
       organization: item.organization.trim(),
       relationship: item.relationship.trim(),
       email: (item.email ?? "").trim().toLowerCase(),
-      phone: (item.phone ?? "").trim(),
+      phone: (item.phone ?? "").replace(/\D/g, "").slice(0, 10),
+    })),
+    volunteer: profile.volunteer.map((item) => ({
+      ...item,
+      startDate: item.startDate.trim(),
+      endDate: item.current ? "" : item.endDate.trim(),
     })),
   };
 }
@@ -319,8 +393,11 @@ export function emptyProject(): ResumeProjectItem {
     name: "",
     role: "",
     link: "",
+    linkLabel: "Link",
+    showLinkAsText: true,
     summary: "",
     highlights: [],
+    skills: [],
   };
 }
 

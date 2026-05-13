@@ -11,7 +11,7 @@ const validPayload = {
       role: "Engineer",
       headline: "Builds products",
       email: "test@example.com",
-      phone: "+1 555 000",
+      phone: "5550001234",
       location: "Remote",
       linkEmail: true,
       linkPhone: true,
@@ -92,6 +92,42 @@ describe("masterProfilePayloadSchema contract", () => {
           ...validPayload.profile.basics,
           email: "not-an-email",
         },
+      },
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects malformed phone, URL, and dates", () => {
+    const result = masterProfilePayloadSchema.safeParse({
+      ...validPayload,
+      profile: {
+        ...validPayload.profile,
+        basics: {
+          ...validPayload.profile.basics,
+          phone: "12345",
+        },
+        links: {
+          ...validPayload.profile.links,
+          items: [
+            {
+              ...validPayload.profile.links.items[0],
+              url: "github.com/test",
+            },
+          ],
+        },
+        education: [
+          {
+            id: "edu-1",
+            school: "School",
+            degree: "Degree",
+            field: "Field",
+            startDate: "2024-01",
+            endDate: "abcd",
+            current: false,
+            summary: "",
+          },
+        ],
       },
     });
 

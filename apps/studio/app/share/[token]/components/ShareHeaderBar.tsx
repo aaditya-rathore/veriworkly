@@ -22,8 +22,8 @@ export const ShareHeaderBar = ({ title, expiresAt, actions }: ShareHeaderBarProp
     : "No Expiry";
 
   return (
-    <header className="mx-auto w-full max-w-7xl px-4 py-4 md:px-6 md:pt-6">
-      <div className="border-border bg-card/80 relative overflow-hidden rounded-2xl border px-5 py-4 shadow-sm backdrop-blur-md md:rounded-full md:px-8 lg:px-10">
+    <header className="sticky top-0 z-50 mx-auto w-full max-w-7xl px-4 py-4 md:px-6 md:pt-6">
+      <div className="border-border bg-card/80 relative overflow-visible rounded-2xl border px-5 py-4 shadow-sm backdrop-blur-md md:rounded-full md:px-8 lg:px-10">
         <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
           <div className="flex min-w-0 flex-col gap-1.5">
             <div className="flex items-center gap-2">

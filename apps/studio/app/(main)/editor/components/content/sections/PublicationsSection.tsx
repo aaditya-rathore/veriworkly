@@ -104,6 +104,7 @@ const PublicationsSection = ({
 
           <Field label="Date (YYYY-MM)">
             <Input
+              type="month"
               onChange={(event) =>
                 updateCustomSectionItem("publications", safePublicationIndex, {
                   date: event.target.value,
@@ -115,6 +116,8 @@ const PublicationsSection = ({
 
           <Field label="Publication link">
             <Input
+              placeholder="https://..."
+              type="url"
               onChange={(event) =>
                 updateCustomSectionItem("publications", safePublicationIndex, {
                   link: event.target.value,

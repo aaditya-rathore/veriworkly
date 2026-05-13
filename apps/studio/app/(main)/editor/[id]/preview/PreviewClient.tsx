@@ -32,12 +32,13 @@ export function PreviewClient({ resumeId }: PreviewClientProps) {
 
   useEffect(() => {
     let cancelled = false;
-
     const nextTemplate = loadTemplateComponentById(resume.templateId);
 
-    if (!cancelled) {
-      setTemplateComponent(() => nextTemplate);
-    }
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setTemplateComponent(() => nextTemplate);
+      }
+    });
 
     return () => {
       cancelled = true;

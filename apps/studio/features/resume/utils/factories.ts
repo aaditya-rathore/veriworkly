@@ -47,8 +47,11 @@ export function createProjectItem(): ResumeProjectItem {
     name: "",
     role: "",
     link: "",
+    linkLabel: "Link",
+    showLinkAsText: true,
     summary: "",
     highlights: [],
+    skills: [],
   };
 }
 

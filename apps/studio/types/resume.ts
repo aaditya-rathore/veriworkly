@@ -91,8 +91,11 @@ export interface ResumeProjectItem {
   name: string;
   role: string;
   link: string;
+  linkLabel: string;
+  showLinkAsText: boolean;
   summary: string;
   highlights: string[];
+  skills: string[];
 }
 
 export interface ResumeSkillGroup {

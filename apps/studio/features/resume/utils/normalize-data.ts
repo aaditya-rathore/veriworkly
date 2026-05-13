@@ -138,8 +138,24 @@ function normalizeSections(value: Partial<ResumeData> | null | undefined) {
     }));
 }
 
+function normalizeNumericDate(value: string | undefined, maxLength: number) {
+  return (value ?? "").replace(/\D/g, "").slice(0, maxLength);
+}
+
+function normalizeMonthDate(value: string | undefined) {
+  const trimmed = value?.trim() ?? "";
+  return /^\d{4}-(0[1-9]|1[0-2])$/.test(trimmed) ? trimmed : "";
+}
+
 export function normalizeResumeData(value: Partial<ResumeData> | null | undefined): ResumeData {
-  const normalizedTemplateId = value?.templateId === "faang" ? "ats" : value?.templateId;
+  const templateAliases: Record<string, ResumeData["templateId"]> = {
+    faang: "compact-ats",
+    ats: "compact-ats",
+    modern: "clean-professional",
+  };
+  const normalizedTemplateId = value?.templateId
+    ? (templateAliases[value.templateId] ?? value.templateId)
+    : undefined;
 
   const incomingCustomization = value?.customization;
   const incomingFontFamily = (incomingCustomization as { fontFamily?: string } | undefined)
@@ -154,14 +170,30 @@ export function normalizeResumeData(value: Partial<ResumeData> | null | undefine
       ...value?.basics,
     },
     links: normalizeLinks(value),
-    experience: value?.experience ? value.experience : defaultResume.experience,
+    experience: value?.experience
+      ? value.experience.map((item) => ({
+          ...item,
+          startDate: normalizeMonthDate(item.startDate),
+          endDate: normalizeMonthDate(item.endDate),
+          current: item.current ?? item.endDate?.trim().toLowerCase() === "present",
+        }))
+      : defaultResume.experience,
     education: value?.education?.length
       ? value.education.map((item) => ({
           ...item,
+          startDate: normalizeNumericDate(item.startDate, 4),
+          endDate: normalizeNumericDate(item.endDate, 4),
           current: item.current ?? item.endDate?.trim().toLowerCase() === "present",
         }))
       : defaultResume.education,
-    projects: value?.projects ? value.projects : defaultResume.projects,
+    projects: value?.projects
+      ? value.projects.map((project) => ({
+          ...project,
+          linkLabel: project.linkLabel || "Link",
+          showLinkAsText: project.showLinkAsText ?? true,
+          skills: project.skills ?? [],
+        }))
+      : defaultResume.projects,
     skills: value?.skills?.length ? value.skills : defaultResume.skills,
     customSections: normalizeCustomSections(value),
     sections: normalizeSections(value),

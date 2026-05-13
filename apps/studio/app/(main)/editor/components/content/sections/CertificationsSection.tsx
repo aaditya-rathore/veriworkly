@@ -108,6 +108,7 @@ const CertificationsSection = ({
 
           <Field label="Issue date (YYYY-MM)">
             <Input
+              type="month"
               onChange={(event) =>
                 updateCustomSectionItem("certifications", safeCertificationIndex, {
                   date: event.target.value,
@@ -130,6 +131,8 @@ const CertificationsSection = ({
 
           <Field label="Verification link">
             <Input
+              placeholder="https://..."
+              type="url"
               onChange={(event) =>
                 updateCustomSectionItem("certifications", safeCertificationIndex, {
                   link: event.target.value,

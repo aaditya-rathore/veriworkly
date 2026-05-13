@@ -29,3 +29,84 @@ body {
   margin: 0;
   font-family: var(--font-geist-sans), sans-serif;
 }
+
+.resume-page-preview {
+  position: relative;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--border) 70%, transparent),
+    0 18px 48px color-mix(in oklab, var(--foreground) 10%, transparent);
+}
+
+.resume-page-preview a,
+.resume-page-preview h1,
+.resume-page-preview h2,
+.resume-page-preview h3,
+.resume-page-preview li,
+.resume-page-preview p,
+.resume-page-preview span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.resume-page-preview::before,
+.resume-page-preview::after {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  content: "";
+}
+
+.resume-page-preview::before {
+  background:
+    repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--resume-page-height) - 2px),
+        color-mix(in oklab, var(--border) 80%, transparent) calc(var(--resume-page-height) - 2px),
+        color-mix(in oklab, var(--border) 80%, transparent) var(--resume-page-height)
+      )
+      left top / var(--resume-page-margin) 100% repeat-y,
+    repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--resume-page-height) - 2px),
+        color-mix(in oklab, var(--border) 80%, transparent) calc(var(--resume-page-height) - 2px),
+        color-mix(in oklab, var(--border) 80%, transparent) var(--resume-page-height)
+      )
+      right top / var(--resume-page-margin) 100% repeat-y;
+  background-repeat: repeat-y;
+}
+
+.resume-page-preview::after {
+  background:
+    repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--resume-page-height) - var(--resume-page-margin) - 1px),
+        color-mix(in oklab, var(--accent) 42%, transparent)
+          calc(var(--resume-page-height) - var(--resume-page-margin) - 1px),
+        color-mix(in oklab, var(--accent) 42%, transparent)
+          calc(var(--resume-page-height) - var(--resume-page-margin)),
+        transparent calc(var(--resume-page-height) - var(--resume-page-margin)),
+        transparent var(--resume-page-height)
+      )
+      left top / var(--resume-page-margin) 100% repeat-y,
+    repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent calc(var(--resume-page-height) - var(--resume-page-margin) - 1px),
+        color-mix(in oklab, var(--accent) 42%, transparent)
+          calc(var(--resume-page-height) - var(--resume-page-margin) - 1px),
+        color-mix(in oklab, var(--accent) 42%, transparent)
+          calc(var(--resume-page-height) - var(--resume-page-margin)),
+        transparent calc(var(--resume-page-height) - var(--resume-page-margin)),
+        transparent var(--resume-page-height)
+      )
+      right top / var(--resume-page-margin) 100% repeat-y;
+  background-repeat: repeat-y;
+}

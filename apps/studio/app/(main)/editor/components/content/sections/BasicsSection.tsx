@@ -61,6 +61,7 @@ const BasicsSection = ({
           <Input
             className={invalidClass(basicErrors.email)}
             onChange={(event) => updateBasics({ email: event.target.value })}
+            type="email"
             value={resume.basics.email}
           />
         </Field>
@@ -68,7 +69,13 @@ const BasicsSection = ({
         <Field error={basicErrors.phone} label="Phone">
           <Input
             className={invalidClass(basicErrors.phone)}
-            onChange={(event) => updateBasics({ phone: event.target.value })}
+            inputMode="numeric"
+            maxLength={10}
+            onChange={(event) =>
+              updateBasics({ phone: event.target.value.replace(/\D/g, "").slice(0, 10) })
+            }
+            pattern="[0-9]*"
+            placeholder="1234567890"
             value={resume.basics.phone}
           />
         </Field>

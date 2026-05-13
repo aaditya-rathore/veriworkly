@@ -6,8 +6,9 @@ import { Input } from "@veriworkly/ui";
 import { Button } from "@veriworkly/ui";
 
 import { useResume } from "@/features/resume/hooks/use-resume";
+import { validateLinkItem } from "@/features/resume/utils/validation";
 
-import { Field } from "../EditorFormPrimitives";
+import { Field, invalidClass } from "../EditorFormPrimitives";
 import DraggableSection from "./DraggableSection";
 import { linkTypeOptions } from "../editor-options";
 import type { BaseSectionProps } from "./section-types";
@@ -27,6 +28,7 @@ const LinksSection = ({
   const safeLinkIndex = Math.min(linkIndex, Math.max(0, resume.links.items.length - 1));
 
   const activeLink = resume.links.items[safeLinkIndex];
+  const linkErrors = activeLink ? validateLinkItem(activeLink) : {};
 
   return (
     <DraggableSection
@@ -114,10 +116,12 @@ const LinksSection = ({
             />
           </Field>
 
-          <Field label="URL">
+          <Field error={linkErrors.url} label="URL">
             <Input
+              className={invalidClass(linkErrors.url)}
               value={activeLink.url}
               placeholder="https://..."
+              type="url"
               onChange={(event) =>
                 updateLinkItem(safeLinkIndex, {
                   url: event.target.value,

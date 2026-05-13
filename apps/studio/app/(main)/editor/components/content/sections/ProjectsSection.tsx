@@ -108,12 +108,53 @@ const ProjectsSection = ({
                     link: event.target.value,
                   })
                 }
+                type="url"
+                placeholder="https://..."
                 value={activeProject.link}
+              />
+            </Field>
+
+            <Field label="Link text">
+              <Input
+                disabled={!(activeProject.showLinkAsText ?? true)}
+                onChange={(event) =>
+                  updateProject(safeProjectIndex, {
+                    linkLabel: event.target.value,
+                  })
+                }
+                placeholder="Link"
+                value={activeProject.linkLabel || "Link"}
               />
             </Field>
           </div>
 
           <div className="mt-4 space-y-4">
+            <label className="text-muted flex items-center gap-2 text-sm">
+              <input
+                checked={activeProject.showLinkAsText ?? true}
+                onChange={(event) =>
+                  updateProject(safeProjectIndex, {
+                    showLinkAsText: event.target.checked,
+                    linkLabel: activeProject.linkLabel || "Link",
+                  })
+                }
+                type="checkbox"
+              />
+              Hide project URL behind text
+            </label>
+
+            <Field label="Skills (comma separated)">
+              <DelimitedTextArea
+                key={`${activeProject.id}-skills`}
+                onChange={(nextSkills) =>
+                  updateProject(safeProjectIndex, {
+                    skills: nextSkills,
+                  })
+                }
+                value={activeProject.skills ?? []}
+              />
+            </Field>
+
             <Field error={projectErrors.summary} label="Summary">
               <TextArea
                 className={invalidClass(projectErrors.summary)}

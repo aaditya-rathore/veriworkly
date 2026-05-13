@@ -1,6 +1,13 @@
 import { z } from "zod";
 
 import { normalizeFontFamilyId } from "@/features/documents/constants/fonts";
+import {
+  monthDateSchema,
+  phoneOrEmptySchema,
+  phoneSchema,
+  urlOrEmptySchema,
+  yearDateSchema,
+} from "@/features/resume/schemas/resume-validation-rules";
 
 const languageSchema = z.object({
   id: z.string(),
@@ -18,8 +25,8 @@ const awardSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
   awarder: z.string().min(1),
-  date: z.string(),
-  website: z.string().url().optional().or(z.literal("")),
+  date: monthDateSchema,
+  website: urlOrEmptySchema.optional(),
   description: z.string(),
   showLink: z.boolean(),
 });
@@ -28,8 +35,8 @@ const certificateSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
   issuer: z.string().min(1),
-  date: z.string(),
-  website: z.string().url().optional().or(z.literal("")),
+  date: monthDateSchema,
+  website: urlOrEmptySchema.optional(),
   description: z.string(),
   showLink: z.boolean(),
 });
@@ -38,8 +45,8 @@ const publicationSchema = z.object({
   id: z.string(),
   title: z.string().min(1),
   publisher: z.string().min(1),
-  date: z.string(),
-  website: z.string().url().optional().or(z.literal("")),
+  date: monthDateSchema,
+  website: urlOrEmptySchema.optional(),
   description: z.string(),
   showLink: z.boolean(),
 });
@@ -48,8 +55,8 @@ const volunteerSchema = z.object({
   id: z.string(),
   organization: z.string().min(1),
   role: z.string().min(1),
-  startDate: z.string(),
-  endDate: z.string(),
+  startDate: monthDateSchema,
+  endDate: monthDateSchema,
   current: z.boolean(),
   location: z.string(),
   summary: z.string(),
@@ -61,7 +68,7 @@ const referenceSchema = z.object({
   title: z.string().min(1),
   organization: z.string().min(1),
   email: z.string().email().optional().or(z.literal("")),
-  phone: z.string().optional().or(z.literal("")),
+  phone: phoneOrEmptySchema.optional(),
   relationship: z.string().min(1),
 });
 
@@ -151,7 +158,7 @@ const masterProfileDbSchemaBase = z.object({
     role: z.string(),
     headline: z.string(),
     email: z.string().email(),
-    phone: z.string(),
+    phone: phoneSchema,
     location: z.string(),
     linkEmail: z.boolean(),
     linkPhone: z.boolean(),
@@ -174,7 +181,7 @@ const masterProfileDbSchemaBase = z.object({
           "custom",
         ]),
         label: z.string(),
-        url: z.string().url(),
+        url: urlOrEmptySchema,
       }),
     ),
   }),
@@ -185,8 +192,8 @@ const masterProfileDbSchemaBase = z.object({
       company: z.string(),
       role: z.string(),
       location: z.string(),
-      startDate: z.string(),
-      endDate: z.string(),
+      startDate: monthDateSchema,
+      endDate: monthDateSchema,
       current: z.boolean(),
       summary: z.string(),
       highlights: z.array(z.string()),
@@ -198,8 +205,8 @@ const masterProfileDbSchemaBase = z.object({
       school: z.string(),
       degree: z.string(),
       field: z.string(),
-      startDate: z.string(),
-      endDate: z.string(),
+      startDate: yearDateSchema,
+      endDate: yearDateSchema,
       current: z.boolean(),
       summary: z.string(),
     }),
@@ -209,9 +216,12 @@ const masterProfileDbSchemaBase = z.object({
       id: z.string(),
       name: z.string(),
       role: z.string(),
-      link: z.string().url().or(z.literal("")),
+      link: urlOrEmptySchema,
+      linkLabel: z.string().default("Link"),
+      showLinkAsText: z.boolean().default(true),
       summary: z.string(),
       highlights: z.array(z.string()),
+      skills: z.array(z.string()).default([]),
     }),
   ),
   skills: z.array(

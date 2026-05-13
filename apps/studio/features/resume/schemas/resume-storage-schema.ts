@@ -4,6 +4,12 @@ import type { ResumeData } from "@/types/resume";
 
 import { normalizeResumeData } from "@/features/resume/utils/normalize-data";
 import { normalizeFontFamilyId } from "@/features/documents/constants/fonts";
+import {
+  monthDateSchema,
+  phoneSchema,
+  urlOrEmptySchema,
+  yearDateSchema,
+} from "@/features/resume/schemas/resume-validation-rules";
 
 const resumeSectionIdSchema = z.enum([
   "basics",
@@ -66,7 +72,7 @@ const resumeDataSchemaBase = z
       role: z.string(),
       headline: z.string(),
       email: z.string(),
-      phone: z.string(),
+      phone: phoneSchema,
       location: z.string(),
       linkEmail: z.boolean(),
       linkPhone: z.boolean(),
@@ -80,7 +86,7 @@ const resumeDataSchemaBase = z
           id: z.string(),
           type: resumeLinkTypeSchema,
           label: z.string(),
-          url: z.string(),
+          url: urlOrEmptySchema,
         }),
       ),
     }),
@@ -93,8 +99,8 @@ const resumeDataSchemaBase = z
         company: z.string(),
         role: z.string(),
         location: z.string(),
-        startDate: z.string(),
-        endDate: z.string(),
+        startDate: monthDateSchema,
+        endDate: monthDateSchema,
         current: z.boolean(),
         summary: z.string(),
         highlights: z.array(z.string()),
@@ -107,8 +113,8 @@ const resumeDataSchemaBase = z
         school: z.string(),
         degree: z.string(),
         field: z.string(),
-        startDate: z.string(),
-        endDate: z.string(),
+        startDate: yearDateSchema,
+        endDate: yearDateSchema,
         current: z.boolean(),
         summary: z.string(),
       }),
@@ -119,9 +125,12 @@ const resumeDataSchemaBase = z
         id: z.string(),
         name: z.string(),
         role: z.string(),
-        link: z.string(),
+        link: urlOrEmptySchema,
+        linkLabel: z.string().default("Link"),
+        showLinkAsText: z.boolean().default(true),
         summary: z.string(),
         highlights: z.array(z.string()),
+        skills: z.array(z.string()).default([]),
       }),
     ),
 

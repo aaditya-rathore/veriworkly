@@ -102,6 +102,7 @@ const AwardsSection = ({
 
             <Field label="Date (YYYY-MM)">
               <Input
+                type="month"
                 onChange={(event) =>
                   updateCustomSectionItem("awards", safeAwardIndex, {
                     date: event.target.value,
@@ -113,6 +114,8 @@ const AwardsSection = ({
 
             <Field label="Link (optional)">
               <Input
+                placeholder="https://..."
+                type="url"
                 onChange={(event) =>
                   updateCustomSectionItem("awards", safeAwardIndex, {
                     link: event.target.value,

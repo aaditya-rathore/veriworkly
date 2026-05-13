@@ -21,16 +21,16 @@ export const defaultSections: ResumeSection[] = [
 
 export const defaultResume: ResumeData = {
   id: "default-resume",
-  templateId: "modern",
+  templateId: "clean-professional",
 
   basics: {
     fullName: "VeriWorkly User",
     role: "Indie Developer & Product Builder",
-    headline: "Building useful, fast, and privacy-first web products — one idea at a time.",
+    headline: "Building useful, fast, and privacy-first web products - one idea at a time.",
 
     email: "hello@veriworkly.com",
-    phone: "+91 00000 00000",
-    location: "Internet (occasionally Earth 🌍)",
+    phone: "0000000000",
+    location: "Internet (occasionally Earth)",
 
     linkEmail: true,
     linkPhone: true,
@@ -71,7 +71,7 @@ export const defaultResume: ResumeData = {
       role: "Founder & Developer",
       location: "Remote",
       startDate: "2025-01",
-      endDate: "Present",
+      endDate: "",
       current: true,
 
       summary: "Building a modern resume builder focused on speed, privacy, and user control.",
@@ -89,10 +89,10 @@ export const defaultResume: ResumeData = {
     {
       id: "edu-1",
       school: "Self-Taught",
-      degree: "Internet Degree™",
+      degree: "Internet Degree",
       field: "Computer Science (Unofficial but Effective)",
       startDate: "2019",
-      endDate: "Present",
+      endDate: "",
       current: true,
 
       summary:
@@ -106,6 +106,9 @@ export const defaultResume: ResumeData = {
       name: "VeriWorkly Resume Builder",
       role: "Creator",
       link: "https://veriworkly.com",
+      linkLabel: "Link",
+      showLinkAsText: true,
+      skills: ["Next.js", "TypeScript", "UX"],
 
       summary:
         "A privacy-first resume builder with no login, real-time preview, and flexible templates.",
@@ -122,6 +125,9 @@ export const defaultResume: ResumeData = {
       name: "Realtime Task Board",
       role: "Full Stack Developer",
       link: "https://github.com/gautam25raj",
+      linkLabel: "Link",
+      showLinkAsText: true,
+      skills: ["WebSockets", "Node.js", "PostgreSQL"],
 
       summary: "Collaborative Kanban board with real-time updates and team workflows.",
 

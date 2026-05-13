@@ -1,6 +1,6 @@
 {
   "name": "@veriworkly/studio",
-  "version": "3.2.3",
+  "version": "3.2.4",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,6 +12,7 @@
     "test:contracts": "vitest run"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.5.1",
     "@veriworkly/ui": "*",
     "better-auth": "^1.6.9",
     "clsx": "^2.1.1",

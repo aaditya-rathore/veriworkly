@@ -114,6 +114,7 @@ const ExperienceSection = ({
 
             <Field error={experienceErrors.startDate} label="Start (YYYY-MM)">
               <Input
+                type="month"
                 placeholder="2024-01"
                 value={activeExperience.startDate}
                 className={invalidClass(experienceErrors.startDate)}
@@ -128,8 +129,9 @@ const ExperienceSection = ({
             <Field error={experienceErrors.endDate} label="End (YYYY-MM)">
               <Input
                 value={activeExperience.endDate}
-                placeholder="Present or 2025-06"
+                placeholder="2025-06"
                 disabled={activeExperience.current}
+                type="month"
                 className={invalidClass(experienceErrors.endDate)}
                 onChange={(event) =>
                   updateExperience(safeExperienceIndex, {
@@ -147,6 +149,7 @@ const ExperienceSection = ({
                 onChange={(event) =>
                   updateExperience(safeExperienceIndex, {
                     current: event.target.checked,
+                    endDate: event.target.checked ? "" : activeExperience.endDate,
                   })
                 }
               />

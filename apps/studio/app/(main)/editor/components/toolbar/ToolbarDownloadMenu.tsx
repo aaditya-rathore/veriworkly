@@ -1,12 +1,22 @@
 "use client";
 
-import { Files, Code2, FileText, FileJson, Download, FileCode2, ChevronDown } from "lucide-react";
+import {
+  Files,
+  Code2,
+  FileText,
+  FileJson,
+  Download,
+  FileCode2,
+  ChevronDown,
+  FileDown,
+} from "lucide-react";
 
 import { Button } from "@veriworkly/ui";
 import { Menu, MenuItem } from "@veriworkly/ui";
 
 interface ToolbarDownloadMenuProps {
   activeDownload: string | null;
+  onDownloadPdf: () => Promise<void>;
   onDownloadDocx: () => Promise<void>;
   onDownloadMarkdown: () => void;
   onDownloadHtml: () => void;
@@ -16,6 +26,7 @@ interface ToolbarDownloadMenuProps {
 
 const ToolbarDownloadMenu = ({
   activeDownload,
+  onDownloadPdf,
   onDownloadDocx,
   onDownloadMarkdown,
   onDownloadHtml,
@@ -43,6 +54,17 @@ const ToolbarDownloadMenu = ({
     >
       {({ close }) => (
         <>
+          <MenuItem
+            disabled={Boolean(activeDownload)}
+            onClick={async () => {
+              close();
+              await onDownloadPdf();
+            }}
+          >
+            <FileDown className="h-4 w-4" />
+            {activeDownload === "pdf" ? "Generating PDF..." : "PDF"}
+          </MenuItem>
+
           <MenuItem
             disabled={Boolean(activeDownload)}
             onClick={async () => {

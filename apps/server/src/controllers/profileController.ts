@@ -10,6 +10,8 @@ import { masterProfilePayloadSchema } from "#validators/masterProfileValidator";
 import { cacheDel, cacheGet, cacheSet } from "#utils/redis";
 import { createSuccessResponse, handleValidationError } from "#utils/errors";
 
+export const hasMasterProfileConflict = ProfileService.hasConflict;
+
 export class ProfileController {
   /**
    * Get the authenticated user's master profile and summary.

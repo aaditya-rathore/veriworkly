@@ -1,18 +1,31 @@
 "use client";
 
 import React from "react";
-import type { ResumeData } from "@/types/resume";
-
 interface SectionProps {
   title: string;
   children: React.ReactNode;
   accentColor: string;
+  backgroundColor?: string;
   borderColor: string;
+  sectionSpacing?: number;
 }
 
-export const Section: React.FC<SectionProps> = ({ title, children, accentColor, borderColor }) => {
+export const Section: React.FC<SectionProps> = ({
+  title,
+  children,
+  accentColor,
+  backgroundColor,
+  borderColor,
+  sectionSpacing,
+}) => {
   return (
-    <section className="mb-6">
+    <section
+      className="mb-6 break-inside-avoid-page"
+      style={{
+        backgroundColor,
+        marginBottom: sectionSpacing,
+      }}
+    >
       <div className="mb-3 flex items-center gap-3">
         <div className="h-px flex-1" style={{ backgroundColor: borderColor }} />
         <h2

@@ -127,6 +127,7 @@ const ReferencesSection = ({
 
           <Field label="Email (optional)">
             <Input
+              type="email"
               onChange={(event) =>
                 updateCustomSectionItem("references", safeReferenceIndex, {
                   link: event.target.value,
@@ -138,11 +139,15 @@ const ReferencesSection = ({
 
           <Field label="Phone (optional)">
             <Input
+              inputMode="numeric"
+              maxLength={10}
               onChange={(event) =>
                 updateCustomSectionItem("references", safeReferenceIndex, {
-                  date: event.target.value,
+                  date: event.target.value.replace(/\D/g, "").slice(0, 10),
                 })
               }
+              pattern="[0-9]*"
+              placeholder="1234567890"
               value={activeReference.date}
             />
           </Field>

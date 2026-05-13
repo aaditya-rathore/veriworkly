@@ -13,7 +13,13 @@ import { loadTemplateComponentById } from "@/templates";
 import { type ShareLinkPayload, verifyShareLink } from "@/features/resume/services/public-share";
 import { DocumentFontLoader } from "@/features/documents/components/DocumentFontLoader";
 
-import { ResumeCanvas, ShareHeaderBar, FullScreenMessage, PasswordGateModal } from "./components";
+import {
+  ResumeCanvas,
+  ShareHeaderBar,
+  DownloadActions,
+  FullScreenMessage,
+  PasswordGateModal,
+} from "./components";
 
 interface TemplateState {
   loading: boolean;
@@ -143,6 +149,7 @@ const ShareResumeClient = ({
       <ShareHeaderBar
         title={dataState.payload.resumeTitle}
         expiresAt={dataState.payload.expiresAt}
+        actions={<DownloadActions resume={resume} sharePreviewId={sharePreviewId} />}
       />
 
       <ResumeCanvas

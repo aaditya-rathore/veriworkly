@@ -1,22 +1,19 @@
 import type {
   ResumeBasics,
+  ResumeLinkItem,
   ResumeEducationItem,
   ResumeExperienceItem,
   ResumeProjectItem,
   ResumeSkillGroup,
 } from "@/types/resume";
+import {
+  isHttpUrl,
+  isMonthDate,
+  isTenDigitPhone,
+  isYearDate,
+} from "@/features/resume/schemas/resume-validation-rules";
 
 export type ValidationErrors<T extends string> = Partial<Record<T, string>>;
-
-const datePattern = /^\d{4}-(0[1-9]|1[0-2])$/;
-
-function isValidDate(value: string) {
-  return !value || datePattern.test(value);
-}
-
-function isValidUrl(value: string) {
-  return !value || /^https?:\/\/.+/i.test(value);
-}
 
 export function validateBasics(
   basics: ResumeBasics,
@@ -45,10 +42,22 @@ export function validateBasics(
 
   if (!basics.phone.trim()) {
     errors.phone = "Phone is required.";
+  } else if (!isTenDigitPhone(basics.phone)) {
+    errors.phone = "Phone number must have exactly 10 digits.";
   }
 
   if (!basics.location.trim()) {
     errors.location = "Location is required.";
+  }
+
+  return errors;
+}
+
+export function validateLinkItem(item: ResumeLinkItem): ValidationErrors<"label" | "url"> {
+  const errors: ValidationErrors<"label" | "url"> = {};
+
+  if (!isHttpUrl(item.url)) {
+    errors.url = "Use a valid URL starting with http:// or https://.";
   }
 
   return errors;
@@ -85,13 +94,11 @@ export function validateExperience(
     errors.location = "Location is required.";
   }
 
-  if (!isValidDate(item.startDate)) {
+  if (!isMonthDate(item.startDate)) {
     errors.startDate = "Use YYYY-MM format.";
   }
 
-  const hasPresentEndDate = item.endDate.trim().toLowerCase() === "present";
-
-  if (!isValidDate(item.endDate) && !item.current && !hasPresentEndDate) {
+  if (!isMonthDate(item.endDate) && !item.current) {
     errors.endDate = "Use YYYY-MM format.";
   }
 
@@ -119,12 +126,12 @@ export function validateEducation(
     errors.field = "Field is required.";
   }
 
-  if (!isValidDate(item.startDate)) {
-    errors.startDate = "Use YYYY-MM format.";
+  if (!isYearDate(item.startDate)) {
+    errors.startDate = "Use YYYY format.";
   }
 
-  if (!isValidDate(item.endDate) && !item.current) {
-    errors.endDate = "Use YYYY-MM format.";
+  if (!isYearDate(item.endDate) && !item.current) {
+    errors.endDate = "Use YYYY format.";
   }
 
   return errors;
@@ -143,7 +150,7 @@ export function validateProject(
     errors.role = "Role is required.";
   }
 
-  if (!isValidUrl(item.link)) {
+  if (!isHttpUrl(item.link)) {
     errors.link = "Use a valid URL starting with http:// or https://";
   }
 

@@ -113,29 +113,35 @@ const EducationSection = ({
           />
         </Field>
 
-        <Field error={educationErrors.startDate} label="Start (YYYY-MM)">
+        <Field error={educationErrors.startDate} label="Start year">
           <Input
             className={invalidClass(educationErrors.startDate)}
+            inputMode="numeric"
+            maxLength={4}
             onChange={(event) =>
               updateEducation(safeEducationIndex, {
-                startDate: event.target.value,
+                startDate: event.target.value.replace(/\D/g, "").slice(0, 4),
               })
             }
-            placeholder="2019-09"
+            pattern="[0-9]*"
+            placeholder="2019"
             value={activeEducation.startDate}
           />
         </Field>
 
-        <Field error={educationErrors.endDate} label="End (YYYY-MM)">
+        <Field error={educationErrors.endDate} label="End year">
           <Input
             className={invalidClass(educationErrors.endDate)}
             disabled={activeEducation.current}
+            inputMode="numeric"
+            maxLength={4}
             onChange={(event) =>
               updateEducation(safeEducationIndex, {
-                endDate: event.target.value,
+                endDate: event.target.value.replace(/\D/g, "").slice(0, 4),
               })
             }
-            placeholder="Present or 2023-06"
+            pattern="[0-9]*"
+            placeholder="2023"
             value={activeEducation.endDate}
           />
         </Field>
@@ -147,6 +153,7 @@ const EducationSection = ({
             onChange={(event) =>
               updateEducation(safeEducationIndex, {
                 current: event.target.checked,
+                endDate: event.target.checked ? "" : activeEducation.endDate,
               })
             }
             type="checkbox"

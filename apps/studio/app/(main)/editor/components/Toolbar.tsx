@@ -23,6 +23,7 @@ import {
   exportResumeAsHtml,
   exportResumeAsJson,
   exportResumeAsDocx,
+  exportResumeAsPdf,
   exportResumeAsText,
   importResumeFromFile,
   exportResumeAsMarkdown,
@@ -145,6 +146,20 @@ const Toolbar = ({ resumeId, resumePreviewId }: ToolbarProps) => {
     }
   }
 
+  async function onDownloadPdf() {
+    setActiveDownload("pdf");
+
+    try {
+      await exportResumeAsPdf(resume);
+      setMessage("PDF downloaded successfully");
+      trackUsageEvent({ event: "resume_exported" });
+    } catch {
+      setMessage("Could not generate PDF. Try again.");
+    } finally {
+      setActiveDownload(null);
+    }
+  }
+
   function onDownloadMarkdown() {
     exportResumeAsMarkdown(resume);
     setMessage("Markdown downloaded successfully");
@@ -260,6 +275,7 @@ const Toolbar = ({ resumeId, resumePreviewId }: ToolbarProps) => {
         />
 
         <ToolbarDownloadMenu
+          onDownloadPdf={onDownloadPdf}
           onDownloadDocx={onDownloadDocx}
           onDownloadMarkdown={onDownloadMarkdown}
           onDownloadHtml={onDownloadHtml}

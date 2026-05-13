@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from "react";
+import { CleanProfessionalWeb } from "./clean-professional/web";
+import { CompactAtsWeb } from "./compact-ats/web";
 
 export interface TemplateDefinition {
   id: string;
@@ -15,25 +17,23 @@ export interface TemplateDefinition {
 export const templateRegistry: TemplateDefinition[] = [
   {
     id: "clean-professional",
-    name: "Clean Professional",
+    name: "Executive Clarity",
     description:
-      "A modern, single-column ATS-friendly resume with clean typography and professional layout.",
+      "A polished single-column resume with refined spacing, strong section rhythm, and ATS-safe structure.",
     accentColor: "#0ea5e9",
     tags: ["One column", "ATS-friendly", "Modern", "Professional"],
     renderWeb: (props: any) => {
-      const { CleanProfessionalWeb } = require("./clean-professional/web");
       return React.createElement(CleanProfessionalWeb, props);
     },
   },
   {
     id: "compact-ats",
-    name: "Compact ATS",
+    name: "Precision ATS",
     description:
-      "An ultra-optimized single-column layout designed for maximum ATS parsing compatibility with minimal styling.",
+      "A dense, recruiter-friendly layout for longer resumes that still exports as a real matching PDF.",
     accentColor: "#10b981",
     tags: ["One column", "ATS-friendly", "Compact", "Simple"],
     renderWeb: (props: any) => {
-      const { CompactAtsWeb } = require("./compact-ats/web");
       return React.createElement(CompactAtsWeb, props);
     },
   },
