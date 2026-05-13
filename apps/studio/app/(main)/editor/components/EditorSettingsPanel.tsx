@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import type { ResumeFontFamilyId } from "@/types/resume-font";
+import type { FontFamilyId } from "@/features/documents/constants/fonts";
 
 import { templateSummaries } from "@/config/templates";
 
@@ -12,7 +12,7 @@ import SectionVisibilitySettings from "./settings/SectionVisibilitySettings";
 
 import { useResume } from "@/features/resume/hooks/use-resume";
 import { defaultResume } from "@/features/resume/constants/default-resume";
-import { resumeFontOptions } from "@/features/documents/utils/font-registry";
+import { fontOptions } from "@/features/documents/constants/fonts";
 
 const EditorSettingsPanel = () => {
   const { resume, setSectionVisibility, setTemplateId, updateCustomization } = useResume();
@@ -45,12 +45,12 @@ const EditorSettingsPanel = () => {
         label="Font style"
         onChange={(event) =>
           updateCustomization({
-            fontFamily: event.target.value as ResumeFontFamilyId,
+            fontFamily: event.target.value as FontFamilyId,
           })
         }
         value={resume.customization.fontFamily}
       >
-        {resumeFontOptions.map((font) => (
+        {fontOptions.map((font) => (
           <option key={font.value} value={font.value}>
             {font.label}
           </option>

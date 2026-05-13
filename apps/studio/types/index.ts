@@ -1,5 +1,4 @@
 export * from "@/types/document";
-export * from "@/types/document-font";
 export * from "@/types/resume";
-export * from "@/types/resume-font";
+export * from "@/features/documents/constants/fonts";
 export * from "@/types/template";

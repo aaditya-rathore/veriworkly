@@ -11,15 +11,9 @@ import { Button } from "@veriworkly/ui";
 import { loadTemplateComponentById } from "@/templates";
 
 import { type ShareLinkPayload, verifyShareLink } from "@/features/resume/services/public-share";
-import { ensureResumeFontStylesheet } from "@/features/documents/utils/font-loader";
+import { DocumentFontLoader } from "@/features/documents/components/DocumentFontLoader";
 
-import {
-  ResumeCanvas,
-  ShareHeaderBar,
-  FullScreenMessage,
-  PasswordGateModal,
-  DownloadActions,
-} from "./components";
+import { ResumeCanvas, ShareHeaderBar, FullScreenMessage, PasswordGateModal } from "./components";
 
 interface TemplateState {
   loading: boolean;
@@ -73,25 +67,10 @@ const ShareResumeClient = ({
       return;
     }
 
-    if (resume.customization?.fontFamily) {
-      ensureResumeFontStylesheet(resume.customization.fontFamily);
-    }
-
     setTemplateState((prev) => ({ ...prev, loading: true, error: null }));
 
-    loadTemplateComponentById(resume.templateId)
-      .then((component) => {
-        if (isActive) setTemplateState({ loading: false, error: null, component });
-      })
-      .catch((err: unknown) => {
-        if (isActive) {
-          setTemplateState({
-            loading: false,
-            error: err instanceof Error ? err.message : "Unable to load resume template",
-            component: null,
-          });
-        }
-      });
+    const component = loadTemplateComponentById(resume.templateId);
+    if (isActive) setTemplateState({ loading: false, error: null, component });
 
     return () => {
       isActive = false;
@@ -160,10 +139,10 @@ const ShareResumeClient = ({
 
   return (
     <main className="bg-background surface-grid selection:bg-accent/20 relative min-h-screen">
+      <DocumentFontLoader fontFamily={resume.customization.fontFamily} />
       <ShareHeaderBar
         title={dataState.payload.resumeTitle}
         expiresAt={dataState.payload.expiresAt}
-        actions={<DownloadActions resume={resume} sharePreviewId={sharePreviewId} />}
       />
 
       <ResumeCanvas

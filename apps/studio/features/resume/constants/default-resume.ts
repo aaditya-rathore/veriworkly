@@ -229,7 +229,7 @@ export const defaultResume: ResumeData = {
     textColor: "#0f172a",
     mutedTextColor: "#475569",
     pageBackgroundColor: "#ffffff",
-    sectionBackgroundColor: "#f8fafc",
+    sectionBackgroundColor: "#ffffff",
     borderColor: "#cbd5e1",
     sectionHeadingColor: "#334155",
     fontFamily: "geist",

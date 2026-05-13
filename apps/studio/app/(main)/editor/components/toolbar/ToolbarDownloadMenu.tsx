@@ -1,24 +1,12 @@
 "use client";
 
-import {
-  Files,
-  Code2,
-  FileText,
-  FileJson,
-  Download,
-  FileCode2,
-  FileImage,
-  ChevronDown,
-} from "lucide-react";
+import { Files, Code2, FileText, FileJson, Download, FileCode2, ChevronDown } from "lucide-react";
 
 import { Button } from "@veriworkly/ui";
 import { Menu, MenuItem } from "@veriworkly/ui";
 
 interface ToolbarDownloadMenuProps {
   activeDownload: string | null;
-  onDownloadPdf: () => Promise<void>;
-  onDownloadPng: () => Promise<void>;
-  onDownloadJpg: () => Promise<void>;
   onDownloadDocx: () => Promise<void>;
   onDownloadMarkdown: () => void;
   onDownloadHtml: () => void;
@@ -28,9 +16,6 @@ interface ToolbarDownloadMenuProps {
 
 const ToolbarDownloadMenu = ({
   activeDownload,
-  onDownloadPdf,
-  onDownloadPng,
-  onDownloadJpg,
   onDownloadDocx,
   onDownloadMarkdown,
   onDownloadHtml,
@@ -58,39 +43,6 @@ const ToolbarDownloadMenu = ({
     >
       {({ close }) => (
         <>
-          <MenuItem
-            disabled={Boolean(activeDownload)}
-            onClick={async () => {
-              close();
-              await onDownloadPdf();
-            }}
-          >
-            <Download className="h-4 w-4" />
-            {activeDownload === "pdf" ? "Rendering PDF..." : "PDF"}
-          </MenuItem>
-
-          <MenuItem
-            disabled={Boolean(activeDownload)}
-            onClick={async () => {
-              close();
-              await onDownloadPng();
-            }}
-          >
-            <FileImage className="h-4 w-4" />
-            {activeDownload === "png" ? "Rendering PNG..." : "PNG Image"}
-          </MenuItem>
-
-          <MenuItem
-            disabled={Boolean(activeDownload)}
-            onClick={async () => {
-              close();
-              await onDownloadJpg();
-            }}
-          >
-            <FileImage className="h-4 w-4" />
-            {activeDownload === "jpg" ? "Rendering JPG..." : "JPG Image"}
-          </MenuItem>
-
           <MenuItem
             disabled={Boolean(activeDownload)}
             onClick={async () => {

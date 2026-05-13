@@ -29,11 +29,6 @@ import {
 } from "@/features/resume/services/resume-service";
 import { useResume } from "@/features/resume/hooks/use-resume";
 import { trackUsageEvent } from "@/features/analytics/services/usage-metrics";
-import {
-  exportResumeAsPdf,
-  exportResumeAsPng,
-  exportResumeAsJpg,
-} from "@/features/documents/export";
 import { DocumentApi } from "@/features/documents/services/document-api";
 import DestructiveModal from "@/components/modals/DestructiveModal";
 
@@ -134,38 +129,6 @@ const Toolbar = ({ resumeId, resumePreviewId }: ToolbarProps) => {
   function openDeleteModal() {
     setDeleteConfirmOpen(true);
     setDeleteConfirmText("");
-  }
-
-  async function onDownloadPdf() {
-    setActiveDownload("pdf");
-    try {
-      await exportResumeAsPdf(resume, resumePreviewId);
-      setMessage("PDF downloaded successfully");
-      trackUsageEvent({ event: "resume_exported_pdf" });
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Could not export PDF.");
-    } finally {
-      setActiveDownload(null);
-    }
-  }
-
-  async function onDownloadImage(format: "png" | "jpg") {
-    setActiveDownload(format);
-    try {
-      if (format === "png") {
-        await exportResumeAsPng(resume, resumePreviewId);
-      } else {
-        await exportResumeAsJpg(resume, resumePreviewId);
-      }
-      setMessage(`${format.toUpperCase()} downloaded successfully`);
-      trackUsageEvent({ event: `resume_exported_${format}` });
-    } catch (error) {
-      setMessage(
-        error instanceof Error ? error.message : `Could not export ${format.toUpperCase()}.`,
-      );
-    } finally {
-      setActiveDownload(null);
-    }
   }
 
   async function onDownloadDocx() {
@@ -297,9 +260,6 @@ const Toolbar = ({ resumeId, resumePreviewId }: ToolbarProps) => {
         />
 
         <ToolbarDownloadMenu
-          onDownloadPdf={onDownloadPdf}
-          onDownloadPng={() => onDownloadImage("png")}
-          onDownloadJpg={() => onDownloadImage("jpg")}
           onDownloadDocx={onDownloadDocx}
           onDownloadMarkdown={onDownloadMarkdown}
           onDownloadHtml={onDownloadHtml}

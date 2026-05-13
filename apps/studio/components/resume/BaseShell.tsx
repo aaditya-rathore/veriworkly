@@ -1,7 +1,7 @@
 import type { ResumeData } from "@/types/resume";
 import type { CSSProperties, ReactNode } from "react";
 
-import { RESUME_FONT_FAMILY_MAP } from "@/features/documents/utils/font-registry";
+import { FONT_FAMILY_MAP } from "@/features/documents/constants/fonts";
 
 interface BaseShellProps {
   customization: ResumeData["customization"];
@@ -13,7 +13,9 @@ export function BaseShell({ customization, children, className }: BaseShellProps
   const templateStyle = {
     borderColor: customization.borderColor,
     color: customization.textColor,
-    fontFamily: RESUME_FONT_FAMILY_MAP[customization.fontFamily],
+    fontFamily:
+      FONT_FAMILY_MAP[customization.fontFamily as keyof typeof FONT_FAMILY_MAP] ||
+      FONT_FAMILY_MAP["geist"],
     "--accent": customization.accentColor,
     "--resume-text": customization.textColor,
     "--resume-muted": customization.mutedTextColor,

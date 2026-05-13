@@ -39,8 +39,6 @@ The API will be available at `http://localhost:8080`.
 - **Redis**: Session cache and rate-limiting store.
 - **Better-Auth**: Complete authentication solution (OTP, sessions).
 
-> **PDF Export**: PDF generation runs entirely client-side in the studio app using React PDF (`@react-pdf/renderer`). The server no longer handles rendering or artifact storage.
-
 ## 📁 Folder Structure
 
 - `src/`: TypeScript source code.

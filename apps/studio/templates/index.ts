@@ -1,86 +1,53 @@
-import { modernTemplateMeta } from "@/templates/modern-core/templates/modern/meta";
-import { minimalTemplateMeta } from "@/templates/modern-core/templates/minimal/meta";
-import { executiveTemplateMeta } from "@/templates/modern-core/templates/leadership/meta";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React from "react";
 
-import { atsClassicTemplateMeta } from "@/templates/compact-core/templates/ats-classic/meta";
-import { classicAcademicTemplateMeta } from "@/templates/compact-core/templates/professional-classic/meta";
-import { structuredProfessionalTemplateMeta } from "@/templates/compact-core/templates/structured-professional/meta";
-import { academicSerifTemplateMeta } from "@/templates/compact-core/templates/academic-serif/meta";
-
-import type { TemplateComponent, TemplateDefinition } from "@/types/template";
-
-type TemplateComponentModule = {
-  default: TemplateComponent;
-};
-
-type TemplateComponentLoader = () => Promise<TemplateComponentModule>;
-
-type TemplateEntry = {
-  meta: TemplateDefinition;
-  loadComponent: TemplateComponentLoader;
-};
-
-function normalizeTemplateId(templateId: string) {
-  return templateId === "faang" ? "ats" : templateId;
+export interface TemplateDefinition {
+  id: string;
+  name: string;
+  description: string;
+  accentColor: string;
+  tags: string[];
+  renderWeb: (props: any) => React.ReactNode;
 }
 
-const templateEntries: TemplateEntry[] = [
+// Template registry metadata - lazy loads components on demand
+// Templates are NOT loaded by default to optimize performance
+export const templateRegistry: TemplateDefinition[] = [
   {
-    meta: modernTemplateMeta,
-    loadComponent: () => import("@/templates/modern-core/templates/modern"),
+    id: "clean-professional",
+    name: "Clean Professional",
+    description:
+      "A modern, single-column ATS-friendly resume with clean typography and professional layout.",
+    accentColor: "#0ea5e9",
+    tags: ["One column", "ATS-friendly", "Modern", "Professional"],
+    renderWeb: (props: any) => {
+      const { CleanProfessionalWeb } = require("./clean-professional/web");
+      return React.createElement(CleanProfessionalWeb, props);
+    },
   },
   {
-    meta: minimalTemplateMeta,
-    loadComponent: () => import("@/templates/modern-core/templates/minimal"),
-  },
-  {
-    meta: executiveTemplateMeta,
-    loadComponent: () => import("@/templates/modern-core/templates/leadership"),
-  },
-  {
-    meta: atsClassicTemplateMeta,
-    loadComponent: () => import("@/templates/compact-core/templates/ats-classic"),
-  },
-  {
-    meta: classicAcademicTemplateMeta,
-    loadComponent: () => import("@/templates/compact-core/templates/professional-classic"),
-  },
-  {
-    meta: structuredProfessionalTemplateMeta,
-    loadComponent: () => import("@/templates/compact-core/templates/structured-professional"),
-  },
-  {
-    meta: academicSerifTemplateMeta,
-    loadComponent: () => import("@/templates/compact-core/templates/academic-serif"),
+    id: "compact-ats",
+    name: "Compact ATS",
+    description:
+      "An ultra-optimized single-column layout designed for maximum ATS parsing compatibility with minimal styling.",
+    accentColor: "#10b981",
+    tags: ["One column", "ATS-friendly", "Compact", "Simple"],
+    renderWeb: (props: any) => {
+      const { CompactAtsWeb } = require("./compact-ats/web");
+      return React.createElement(CompactAtsWeb, props);
+    },
   },
 ];
 
-export const templateRegistry: TemplateDefinition[] = templateEntries.map((entry) => entry.meta);
+export const loadTemplateComponentById = (id: string | undefined): React.ComponentType<any> => {
+  const match = templateRegistry.find((t) => t.id === id);
+  const template = match || templateRegistry[0];
 
-const templateComponentLoaders: Record<string, TemplateComponentLoader> = Object.fromEntries(
-  templateEntries.map((entry) => [entry.meta.id, entry.loadComponent]),
-) as Record<string, TemplateComponentLoader>;
+  return (props: any) => {
+    return template.renderWeb(props);
+  };
+};
 
-function getFallbackTemplate() {
-  return templateRegistry[0];
-}
-
-export function getTemplateById(templateId: string) {
-  const normalizedTemplateId = normalizeTemplateId(templateId);
-
-  return (
-    templateRegistry.find((template) => template.id === normalizedTemplateId) ??
-    getFallbackTemplate()
-  );
-}
-
-export async function loadTemplateComponentById(templateId: string): Promise<TemplateComponent> {
-  const normalizedTemplateId = normalizeTemplateId(templateId);
-
-  const loader =
-    templateComponentLoaders[normalizedTemplateId] ??
-    templateComponentLoaders[getFallbackTemplate().id];
-
-  const templateModule = await loader();
-  return templateModule.default;
-}
+export const getTemplateById = (id: string | undefined): TemplateDefinition | undefined => {
+  return templateRegistry.find((t) => t.id === id);
+};

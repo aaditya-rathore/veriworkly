@@ -1,7 +1,7 @@
 import type { ResumeData, ResumeLinkItem, ResumeLinkType } from "@/types/resume";
 
 import { defaultResume, defaultSections } from "@/features/resume/constants/default-resume";
-import { normalizeResumeFontFamilyId } from "@/features/documents/utils/font-registry";
+import { normalizeFontFamilyId } from "@/features/documents/constants/fonts";
 
 function isKnownLinkType(value: string): value is ResumeLinkType {
   return [
@@ -168,7 +168,7 @@ export function normalizeResumeData(value: Partial<ResumeData> | null | undefine
     customization: {
       ...defaultResume.customization,
       ...incomingCustomization,
-      fontFamily: normalizeResumeFontFamilyId(incomingFontFamily),
+      fontFamily: normalizeFontFamilyId(incomingFontFamily),
     },
     sync: {
       ...defaultResume.sync,

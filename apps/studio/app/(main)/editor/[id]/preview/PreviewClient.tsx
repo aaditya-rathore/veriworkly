@@ -33,15 +33,11 @@ export function PreviewClient({ resumeId }: PreviewClientProps) {
   useEffect(() => {
     let cancelled = false;
 
-    const loadTemplate = async () => {
-      const nextTemplate = await loadTemplateComponentById(resume.templateId);
+    const nextTemplate = loadTemplateComponentById(resume.templateId);
 
-      if (!cancelled) {
-        setTemplateComponent(() => nextTemplate);
-      }
-    };
-
-    void loadTemplate();
+    if (!cancelled) {
+      setTemplateComponent(() => nextTemplate);
+    }
 
     return () => {
       cancelled = true;

@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { ResumeData } from "@/types/resume";
 
 import { normalizeResumeData } from "@/features/resume/utils/normalize-data";
-import { normalizeResumeFontFamilyId } from "@/features/documents/utils/font-registry";
+import { normalizeFontFamilyId } from "@/features/documents/constants/fonts";
 
 const resumeSectionIdSchema = z.enum([
   "basics",
@@ -55,7 +55,7 @@ const resumeFontFamilySchema = z
   .trim()
   .min(1)
   .max(32)
-  .transform((value) => normalizeResumeFontFamilyId(value));
+  .transform((value) => normalizeFontFamilyId(value));
 
 const resumeDataSchemaBase = z
   .object({

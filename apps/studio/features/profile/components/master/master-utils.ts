@@ -16,10 +16,10 @@ import type {
   ResumeExperienceItem,
 } from "@/types/resume";
 
-import { resumeFontOptions } from "@/features/documents/utils/font-registry";
+import { fontOptions } from "@/features/documents/constants/fonts";
 
 export const linkTypes = ["github", "linkedin", "portfolio"] as const;
-export const fontFamilies = resumeFontOptions.map((font) => font.value);
+export const fontFamilies = fontOptions.map((font) => font.value);
 
 export const fluencyOptions: ResumeLanguage["fluency"][] = [
   "elementary",

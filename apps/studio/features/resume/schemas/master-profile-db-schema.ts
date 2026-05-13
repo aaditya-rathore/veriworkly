@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { normalizeResumeFontFamilyId } from "@/features/documents/utils/font-registry";
+import { normalizeFontFamilyId } from "@/features/documents/constants/fonts";
 
 const languageSchema = z.object({
   id: z.string(),
@@ -137,7 +137,7 @@ const customizationSchema = z.object({
     .trim()
     .min(1)
     .max(32)
-    .transform((value) => normalizeResumeFontFamilyId(value)),
+    .transform((value) => normalizeFontFamilyId(value)),
   sectionSpacing: z.number(),
   pagePadding: z.number(),
   bodyLineHeight: z.number(),
