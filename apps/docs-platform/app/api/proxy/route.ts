@@ -4,9 +4,9 @@ import { openapi } from "@/lib/openapi";
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(",")
-      .map((s) => s.trim())
+      .map((o) => o.trim())
       .filter(Boolean)
-  : ["https://api.veriworkly.com", "https://veriworkly.com"];
+  : ["https://api.veriworkly.com"];
 
 const proxyHandlers = openapi.createProxy({
   allowedOrigins,
