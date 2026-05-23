@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Metadata } from "next";
 
 import { siteConfig } from "@/config/site";
-
 import { Badge, Button } from "@veriworkly/ui";
 
 import { LoginFeatures } from "./component/LoginFeatures";

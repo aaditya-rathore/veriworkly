@@ -1,4 +1,4 @@
-export const DOCUMENT_TYPES = ["RESUME", "COVER_LETTER", "FORMAL_LETTER", "INVOICE"] as const;
+export const DOCUMENT_TYPES = ["RESUME", "COVER_LETTER"] as const;
 
 export type DocumentType = (typeof DOCUMENT_TYPES)[number];
 

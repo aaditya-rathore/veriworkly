@@ -40,9 +40,7 @@ function saveCollection(type: DocumentType, items: Record<string, BaseDocument>)
 }
 
 export function listDocuments(type?: DocumentType): DocumentMeta[] {
-  const selectedTypes: DocumentType[] = type
-    ? [type]
-    : ["RESUME", "COVER_LETTER", "FORMAL_LETTER", "INVOICE"];
+  const selectedTypes: DocumentType[] = type ? [type] : ["RESUME", "COVER_LETTER"];
 
   return selectedTypes
     .flatMap((t) => Object.values(loadCollection(t)))

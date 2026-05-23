@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { LogOut, Loader2, Settings, UserRound, LayoutDashboard } from "lucide-react";
 
 import { siteConfig } from "@/config/site";
-
 import { Container, Menu, MenuItem, Button, buttonClassName } from "@veriworkly/ui";
 
 import { signOutCurrentUser } from "@/features/auth/services/current-user";

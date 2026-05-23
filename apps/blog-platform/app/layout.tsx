@@ -5,9 +5,9 @@ import "./globals.css";
 import { ThemeProvider } from "next-themes";
 import { RootProvider } from "fumadocs-ui/provider/next";
 
+import { siteConfig } from "@/config/site";
 import { globalFontVariables } from "@veriworkly/ui";
 
-import { siteConfig } from "@/config/site";
 import { MainLayout } from "../components/layout/MainLayout";
 
 export const metadata: Metadata = {

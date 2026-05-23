@@ -17,6 +17,8 @@ import {
   revokeShareLink,
   listAllShareLinks,
 } from "@/features/documents/services/share-service";
+import { loadResumeById } from "@/features/resume/services/resume-service";
+import { trackUsageEvent } from "@/features/analytics/services/usage-metrics";
 import { loadDocumentById } from "@/features/documents/services/document-workspace-service";
 
 import { ApiRequestError } from "@/utils/fetchApiData";
@@ -121,9 +123,14 @@ const ActiveLinkRow = ({
 
 function getShareSnapshot(
   document: DocumentLibraryItem | null | undefined,
+  documentId: string | null,
 ) {
-  if (!document) return null;
-  return loadDocumentById(document.type, document.id) as BaseDocument | null;
+  if (document?.type && document.type !== "RESUME") {
+    return loadDocumentById(document.type, document.id) as BaseDocument | null;
+  }
+
+  const id = document?.id ?? documentId;
+  return id ? loadResumeById(id) : null;
 }
 
 const ShareDocumentModal = ({
@@ -142,14 +149,7 @@ const ShareDocumentModal = ({
   const [shareLinks, setShareLinks] = useState<ShareLinkItem[]>([]);
   const [revokingLinkId, setRevokingLinkId] = useState<string | null>(null);
   const documentId = document?.id ?? fallbackDocumentId;
-  const documentLabel =
-    document?.type === "COVER_LETTER"
-      ? "Cover Letter"
-      : document?.type === "FORMAL_LETTER"
-        ? "Formal Letter"
-        : document?.type === "INVOICE"
-          ? "Invoice"
-          : "Resume";
+  const documentLabel = document?.type === "COVER_LETTER" ? "Cover Letter" : "Resume";
   const documentTitle = document?.title ?? fallbackDocumentTitle ?? "Untitled Document";
 
   const refreshShareLinks = useCallback(async (id: string) => {
@@ -179,7 +179,7 @@ const ShareDocumentModal = ({
   const handleCreate = async () => {
     if (!documentId || busy) return;
 
-    const snapshot = getShareSnapshot(document);
+    const snapshot = getShareSnapshot(document, fallbackDocumentId);
 
     if (!snapshot) {
       toast.error("Document not found. Refresh and try again.");
@@ -201,7 +201,7 @@ const ShareDocumentModal = ({
         const nextShareUrl = `${window.location.origin}/share/${shareLink.token}`;
         void navigator.clipboard.writeText(nextShareUrl);
 
-
+        trackUsageEvent({ event: "share_link_created" });
         void refreshShareLinks(documentId);
 
         setPassword("");
@@ -234,6 +234,7 @@ const ShareDocumentModal = ({
       setShareLinks((prev) => prev.filter((item) => item.id !== linkId));
 
       toast.success("Share link revoked successfully.");
+      trackUsageEvent({ event: "share_link_revoked" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Unable to revoke share link.");
     } finally {

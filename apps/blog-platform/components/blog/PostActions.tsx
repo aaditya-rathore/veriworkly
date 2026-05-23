@@ -3,9 +3,8 @@
 import { useMemo, useState } from "react";
 import { MoreHorizontal, Share2, Copy, Check, ExternalLink, BookOpen, Home } from "lucide-react";
 
-import { Button, Input, Menu, MenuItem, Modal } from "@veriworkly/ui";
-
 import { siteConfig } from "@/config/site";
+import { Button, Input, Menu, MenuItem, Modal } from "@veriworkly/ui";
 
 type PostActionsProps = {
   title: string;

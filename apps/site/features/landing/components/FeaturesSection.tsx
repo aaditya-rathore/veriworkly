@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Card } from "@veriworkly/ui";
+import { siteConfig } from "@/config/site";
 
 import { featureItems } from "../data/featureItems";
 
@@ -24,7 +25,7 @@ const FeaturesSection = () => {
         </div>
 
         <Link
-          href="/dashboard"
+          href={siteConfig.links.app}
           aria-label="Start building your resume"
           className="text-accent text-sm font-medium"
         >

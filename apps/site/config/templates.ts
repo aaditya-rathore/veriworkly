@@ -1,7 +1,7 @@
 export type TemplateSummary = {
   id: string;
   name: string;
-  documentType: "resume" | "cover-letter" | "formal-letter" | "invoice";
+  documentType: "resume" | "cover-letter";
   description: string;
   accentColor: string;
   previewImage: string;

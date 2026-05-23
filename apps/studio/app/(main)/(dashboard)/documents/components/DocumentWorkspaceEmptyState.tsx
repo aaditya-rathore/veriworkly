@@ -14,7 +14,7 @@ export function DocumentWorkspaceEmptyState({ activeTab }: { activeTab: "recent"
       <p className="text-muted mt-2 max-w-md text-sm leading-6">
         {activeTab === "shared"
           ? "Shared documents appear here after they have a cloud-backed share link."
-          : "Use the sidebar create button to start a resume, cover letter, formal letter, or invoice."}
+          : "Use the sidebar create button to start a resume or cover letter."}
       </p>
     </div>
   );

@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 import { siteConfig } from "@/config/site";
-
 import { globalFontVariables } from "@veriworkly/ui";
 
 import { Toaster } from "@/components/Toaster";

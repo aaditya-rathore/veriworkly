@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 
-import { siteConfig } from "@/config/site";
-
 import { principles } from "./data/principles";
 
+import { siteConfig } from "@/config/site";
 import { Card, Badge, Button } from "@veriworkly/ui";
 
 import { PublicPageShell } from "@/components/layout/PublicPageShell";
@@ -78,7 +77,7 @@ const AboutPage = () => {
         eyebrow="About"
         title="Free ATS Resume Builder Built for Privacy and Simplicity"
         secondaryAction={{ href: "/contact", label: "Contact the team" }}
-        primaryAction={{ href: "https://app.veriworkly.com/dashboard", label: "Open Dashboard" }}
+        primaryAction={{ href: "https://app.veriworkly.com", label: "Open Dashboard" }}
         description="VeriWorkly is a privacy-first ATS resume builder with modern templates, easy exports, and no login required."
       >
         <script

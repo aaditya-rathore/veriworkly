@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { Button } from "@veriworkly/ui";
-
 import { siteConfig } from "@/config/site";
 
 export const CTASection = () => {

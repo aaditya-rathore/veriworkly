@@ -1,20 +1,21 @@
 "use client";
 
 import type { LucideIcon } from "lucide-react";
-import Link from "next/link";
+
 import {
+  Home,
+  Settings,
   BookOpen,
   FileText,
-  FolderOpen,
-  HelpCircle,
-  Home,
   KeyRound,
   Newspaper,
-  Settings,
+  FolderOpen,
+  HelpCircle,
 } from "lucide-react";
+import Link from "next/link";
 
-import { siteConfig } from "@/config/site";
 import { cn } from "@/lib/utils";
+import { siteConfig } from "@/config/site";
 
 export interface StudioNavItem {
   href: string;

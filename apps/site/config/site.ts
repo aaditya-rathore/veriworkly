@@ -64,7 +64,7 @@ export const siteConfig = {
     { href: "/roadmap", label: "Roadmap" },
     { href: "/stats", label: "Development" },
 
-    { href: "https://app.veriworkly.com/dashboard", label: "Dashboard" },
+    { href: "https://app.veriworkly.com", label: "Dashboard" },
     { href: "https://blog.veriworkly.com", label: "Blog" },
     { href: "https://docs.veriworkly.com", label: "Docs" },
   ],

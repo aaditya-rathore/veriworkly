@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 
-import { siteConfig } from "@/config/site";
-
 import { Container } from "@veriworkly/ui";
+import { siteConfig } from "@/config/site";
 
 import { ColorSection } from "./_components/ColorSection";
 import { LayoutSection } from "./_components/LayoutSection";

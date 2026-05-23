@@ -1,7 +1,7 @@
 import Link from "next/link";
 
-import { Card, Button } from "@veriworkly/ui";
 import { siteConfig } from "@/config/site";
+import { Card, Button } from "@veriworkly/ui";
 
 const HeroSection = () => {
   return (

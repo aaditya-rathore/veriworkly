@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import type { SyncTelemetry } from "@/features/documents/services/document-sync";
+import type { ResumeSyncTelemetry } from "@/features/resume/services/resume-sync";
 import type { DocumentLibraryItem } from "@/features/documents/services/document-library";
 
 import { cn } from "@/lib/utils";
@@ -27,7 +27,7 @@ import { listAllShareLinks } from "@/features/documents/services/share-service";
 
 interface SyncDetailsModalProps {
   document: DocumentLibraryItem;
-  telemetry: SyncTelemetry | null;
+  telemetry: ResumeSyncTelemetry | null;
   syncingDocumentId: string | null;
   onClose: () => void;
   onResolveUseLocal: (id: string) => void;

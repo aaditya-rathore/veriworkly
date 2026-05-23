@@ -15,7 +15,7 @@ export default async function proxy(request: NextRequest) {
   const isAuthenticated = !!sessionCookie;
 
   if (isLoginPage && isAuthenticated) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(new URL("/", request.url));
   }
 
   if (!isLoginPage && !isAuthenticated) {

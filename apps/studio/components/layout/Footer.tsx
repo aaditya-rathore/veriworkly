@@ -1,8 +1,7 @@
 import Link from "next/link";
 
-import { Container, Badge } from "@veriworkly/ui";
-
 import { siteConfig } from "@/config/site";
+import { Container, Badge } from "@veriworkly/ui";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();

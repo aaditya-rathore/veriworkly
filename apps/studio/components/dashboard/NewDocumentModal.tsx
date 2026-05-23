@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Mail, Plus, ReceiptText, ScrollText, X } from "lucide-react";
+import { FileText, Mail, Plus, X } from "lucide-react";
 
 import { Button, Modal } from "@veriworkly/ui";
 
@@ -10,8 +10,6 @@ import { DOCUMENT_TYPES, type DocumentType } from "@/features/documents/core/doc
 const iconMap = {
   RESUME: FileText,
   COVER_LETTER: Mail,
-  FORMAL_LETTER: ScrollText,
-  INVOICE: ReceiptText,
 } satisfies Record<DocumentType, typeof FileText>;
 
 export function NewDocumentButton({

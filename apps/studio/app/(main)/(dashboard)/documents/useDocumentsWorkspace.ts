@@ -3,8 +3,6 @@
 import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
-import type { DocumentType } from "@/features/documents/core/document-types";
-
 import {
   syncDocumentNow,
   keepDocumentLocalOnly,
@@ -20,8 +18,10 @@ import {
   DOCUMENT_LIBRARY_SERVER_SNAPSHOT,
 } from "@/features/documents/services/document-library";
 import { DocumentApi } from "@/features/documents/services/document-api";
-import { listAllShareLinks } from "@/features/documents/services/share-service";
 import { deleteDocument } from "@/features/documents/services/document-workspace-service";
+import { deleteResumeById } from "@/features/resume/services/resume-service";
+import { listAllShareLinks } from "@/features/documents/services/share-service";
+import type { DocumentType } from "@/features/documents/core/document-types";
 
 export type ViewMode = "grid" | "list";
 export type SortMode = "updated" | "title";
@@ -52,7 +52,7 @@ export function useDocumentsWorkspace() {
   );
 
   const { docs, counts } = snapshot;
-  const totalCount = counts.RESUME + counts.COVER_LETTER + counts.FORMAL_LETTER + counts.INVOICE;
+  const totalCount = counts.RESUME + counts.COVER_LETTER;
 
   const bump = useCallback(() => setRefreshKey((key) => key + 1), []);
 
@@ -139,8 +139,12 @@ export function useDocumentsWorkspace() {
     setIsDeleting(true);
 
     try {
-      if (deleteTarget.sync.cloudDocumentId) await DocumentApi.delete(deleteTarget.id);
-      deleteDocument(deleteTarget.type, deleteTarget.id);
+      if (deleteTarget.type === "RESUME") {
+        if (deleteTarget.sync.cloudDocumentId) await DocumentApi.delete(deleteTarget.id);
+        deleteResumeById(deleteTarget.id);
+      } else {
+        deleteDocument(deleteTarget.type, deleteTarget.id);
+      }
 
       toast.success(`${deleteTarget.title} deleted`);
 

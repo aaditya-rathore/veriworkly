@@ -70,9 +70,9 @@ export const auth = betterAuth({
         "/change-password",
         "/delete-user",
       ];
-      
-      const shouldInvalidate = pathsToInvalidate.some(p => 
-        ctx.path === p || ctx.path.startsWith(p + "/")
+
+      const shouldInvalidate = pathsToInvalidate.some(
+        (p) => ctx.path === p || ctx.path.startsWith(p + "/"),
       );
 
       if (shouldInvalidate) {

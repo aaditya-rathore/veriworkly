@@ -5,7 +5,7 @@ import Image from "next/image";
 
 import { Badge } from "@veriworkly/ui";
 
-import type { SyncTelemetry } from "@/features/documents/services/document-sync";
+import type { ResumeSyncTelemetry } from "@/features/resume/services/resume-sync";
 import type { DocumentLibraryItem } from "@/features/documents/services/document-library";
 
 import { getDocumentDefinition } from "@/features/documents/core/registry";
@@ -17,7 +17,7 @@ import { docIconMap, getSyncLabel, getActivityLabel } from "./document-display";
 interface DocumentPreviewCardProps {
   doc: DocumentLibraryItem;
   syncing: boolean;
-  telemetry: SyncTelemetry | null;
+  telemetry: ResumeSyncTelemetry | null;
   onDeleteAction: (doc: DocumentLibraryItem) => void;
   onShareAction: (doc: DocumentLibraryItem) => void;
   onSyncNowAction: (id: string) => void;
@@ -34,7 +34,7 @@ export function DocumentPreviewCard({
   onSyncDetailsAction,
 }: DocumentPreviewCardProps) {
   return (
-    <article className="group border-border bg-card hover:border-accent/40 relative aspect-3/4 w-full min-w-0 overflow-hidden rounded-xl border transition hover:shadow-sm">
+    <article className="group border-border bg-card hover:border-accent/40 relative aspect-[3/4] w-full min-w-0 overflow-hidden rounded-xl border transition hover:shadow-sm">
       <div className="absolute inset-0 bg-[color-mix(in_oklab,var(--background)_94%,white)]">
         <DocumentThumbnailPreview doc={doc} />
       </div>

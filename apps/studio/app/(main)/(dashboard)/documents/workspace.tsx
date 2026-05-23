@@ -5,8 +5,8 @@ import { Grid2X2, LayoutList } from "lucide-react";
 import { Card, Select } from "@veriworkly/ui";
 
 import DestructiveModal from "@/components/modals/DestructiveModal";
-import SyncDetailsModal from "@/components/modals/SyncDetailsModal";
 import ShareDocumentModal from "@/components/modals/ShareDocumentModal";
+import SyncDetailsModal from "@/components/modals/SyncDetailsModal";
 
 import { DocumentListRow } from "./components/DocumentListRow";
 import { DocumentPreviewCard } from "./components/DocumentPreviewCard";
@@ -59,9 +59,7 @@ export default function DocumentsWorkspace() {
           <div>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Document library</h1>
 
-            <p className="text-muted mt-2 max-w-2xl text-base">
-              Saved resumes, cover letters, formal letters, and invoices.
-            </p>
+            <p className="text-muted mt-2 max-w-2xl text-base">Saved resumes and cover letters.</p>
           </div>
 
           <div className="text-muted text-sm">
@@ -96,8 +94,6 @@ export default function DocumentsWorkspace() {
               <option value="ALL">All documents ({totalCount})</option>
               <option value="RESUME">Resume ({counts.RESUME})</option>
               <option value="COVER_LETTER">Cover letter ({counts.COVER_LETTER})</option>
-              <option value="FORMAL_LETTER">Formal letter ({counts.FORMAL_LETTER})</option>
-              <option value="INVOICE">Invoice ({counts.INVOICE})</option>
             </Select>
 
             <label className="sr-only" htmlFor="document-sort">

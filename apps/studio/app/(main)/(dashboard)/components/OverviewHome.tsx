@@ -38,11 +38,7 @@ const OverviewHome = () => {
     () => DOCUMENT_LIBRARY_SERVER_SNAPSHOT,
   );
 
-  const totalCount =
-    snapshot.counts.RESUME +
-    snapshot.counts.COVER_LETTER +
-    snapshot.counts.FORMAL_LETTER +
-    snapshot.counts.INVOICE;
+  const totalCount = snapshot.counts.RESUME + snapshot.counts.COVER_LETTER;
   const resumeCount = snapshot.counts.RESUME;
   const coverLetterCount = snapshot.counts.COVER_LETTER;
   const recentDocs = snapshot.docs.slice(0, 6);
@@ -97,6 +93,7 @@ const OverviewHome = () => {
             <div className="grid gap-2">
               <MiniLink href="/profile" icon={BriefcaseBusiness} label="Profile workspace" />
               <MiniLink href="/documents" icon={FolderOpen} label="Document library" />
+              <MiniLink href="/admin/roadmap" icon={BookOpen} label="Roadmap" />
             </div>
           </aside>
         </div>

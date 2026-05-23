@@ -1,4 +1,5 @@
 import { LayoutGrid, Map, Terminal, Newspaper, BookOpen } from "lucide-react";
+
 import { siteConfig } from "@/config/site";
 
 export const NAVIGATION_ITEMS = [

@@ -2,9 +2,8 @@ import type { ReactNode } from "react";
 
 import Link from "next/link";
 
-import { Container } from "@veriworkly/ui";
-import { Button } from "@veriworkly/ui";
 import { siteConfig } from "@/config/site";
+import { Button, Container } from "@veriworkly/ui";
 
 type PublicPageShellProps = {
   eyebrow: string;

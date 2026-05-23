@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { siteConfig } from "@/config/site";
-
 import { Card, Badge, Button } from "@veriworkly/ui";
 
 import { PublicPageShell } from "@/components/layout/PublicPageShell";

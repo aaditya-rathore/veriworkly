@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Button } from "@veriworkly/ui";
+import { siteConfig } from "@/config/site";
 
 const TemplateNotFound = () => {
   return (
@@ -46,7 +47,7 @@ const TemplateNotFound = () => {
           </Button>
 
           <Button asChild size="lg" variant="ghost" className="rounded-full px-8">
-            <Link href="/dashboard">Back to Dashboard</Link>
+            <Link href={`${siteConfig.links.app}`}>Create Document</Link>
           </Button>
         </div>
       </section>

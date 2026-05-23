@@ -20,6 +20,7 @@ import { AccountMenu } from "@/components/dashboard/AccountMenu";
 import { NewDocumentButton, NewDocumentModal } from "@/components/dashboard/NewDocumentModal";
 import { WorkspaceSearchModal } from "@/components/dashboard/WorkspaceSearchModal";
 
+import { createResume } from "@/features/resume/services/resume-service";
 import { signOutCurrentUser } from "@/features/auth/services/current-user";
 import { createDocument } from "@/features/documents/services/document-workspace-service";
 import type { DocumentType } from "@/features/documents/core/document-types";
@@ -50,8 +51,15 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
   const displayName = user?.name || user?.email?.split("@")[0] || "Local builder";
 
   const createNewDocument = (type: DocumentType) => {
-    createDocument(type);
-    router.push("/documents");
+    if (type === "RESUME") {
+      const resume = createResume();
+      router.push(`/editor/resume/${resume.id}`);
+
+      return;
+    }
+
+    const document = createDocument(type);
+    router.push(`/editor/${type.toLowerCase()}/${document.id}`);
   };
 
   const handleLogout = async () => {
@@ -230,7 +238,7 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
         <WorkspaceSearchModal
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
-          onOpenDocument={() => router.push("/documents")}
+          onOpenDocument={(id) => router.push(`/editor/resume/${id}`)}
         />
 
         <NewDocumentModal

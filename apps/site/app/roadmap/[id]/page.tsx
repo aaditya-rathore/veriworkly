@@ -4,9 +4,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 
-import { siteConfig } from "@/config/site";
-
 import { Container } from "@veriworkly/ui";
+import { siteConfig } from "@/config/site";
 
 import {
   fetchRoadmapFeatureById,

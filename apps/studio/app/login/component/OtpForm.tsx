@@ -4,11 +4,10 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
+import { authClient } from "@/lib/auth-client";
 import { Input, Badge, Button } from "@veriworkly/ui";
 
 import { AuthCard } from "./AuthCard";
-
-import { authClient } from "@/lib/auth-client";
 
 const OtpForm = ({
   sentTo,
@@ -25,7 +24,9 @@ const OtpForm = ({
 
   useEffect(() => {
     if (timeLeft <= 0) return;
+
     const timerId = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+
     return () => clearInterval(timerId);
   }, [timeLeft]);
 
@@ -135,8 +136,9 @@ const OtpForm = ({
           </label>
 
           <Input
-            required
             id="otp"
+            required
+            autoFocus
             type="text"
             value={otp}
             minLength={6}
@@ -145,7 +147,6 @@ const OtpForm = ({
             inputMode="numeric"
             placeholder="000000"
             autoComplete="one-time-code"
-            autoFocus
             className="text-center font-mono text-2xl tracking-[0.5em]"
             onChange={(event) => {
               const val = event.target.value.replace(/\D/g, "").slice(0, 6);

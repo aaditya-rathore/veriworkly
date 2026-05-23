@@ -1,16 +1,21 @@
 "use client";
 
+import { templateSummaries } from "@/config/templates";
+import { RESUME_ACTIVE_ID_STORAGE_KEY, RESUME_COLLECTION_STORAGE_KEY } from "@/lib/constants";
+import { type ResumeListItem } from "@/features/resume/services/resume-service";
+import { listSavedResumes } from "@/features/resume/services/resume-core";
+import { RESUME_STORAGE_UPDATED_EVENT } from "@/features/resume/services/local-storage";
+import { RESUME_SYNC_OUTBOX_UPDATED_EVENT } from "@/features/resume/services/resume-sync";
 import {
   listDocuments,
   loadDocumentById,
 } from "@/features/documents/services/document-workspace-service";
 import type { DocumentType } from "@/features/documents/core/document-types";
-import type { BaseDocument, DocumentSyncState } from "@/features/documents/core/types";
+import type { BaseDocument } from "@/features/documents/core/types";
 import { getDocumentDefinition } from "@/features/documents/core/registry";
-import { DOCUMENT_STORAGE_UPDATED_EVENT } from "./document-sync";
 
 export type DocumentLibraryItem = {
-  source: "document";
+  source: "resume" | "document";
   id: string;
   type: DocumentType;
   title: string;
@@ -20,7 +25,7 @@ export type DocumentLibraryItem = {
   templateDescription: string;
   previewImage: string;
   updatedAt: string;
-  sync: DocumentSyncState;
+  sync: ResumeListItem["sync"];
 };
 
 export type DocumentLibrarySnapshot = {
@@ -32,8 +37,6 @@ export type DocumentLibrarySnapshot = {
 const EMPTY_COUNTS: Record<DocumentType, number> = {
   RESUME: 0,
   COVER_LETTER: 0,
-  FORMAL_LETTER: 0,
-  INVOICE: 0,
 };
 
 export const DOCUMENT_LIBRARY_SERVER_SNAPSHOT: DocumentLibrarySnapshot = {
@@ -52,11 +55,13 @@ export function subscribeToDocumentLibrary(onStoreChange: () => void) {
   if (typeof window === "undefined") return () => {};
 
   window.addEventListener("storage", onStoreChange);
-  window.addEventListener(DOCUMENT_STORAGE_UPDATED_EVENT, onStoreChange);
+  window.addEventListener(RESUME_STORAGE_UPDATED_EVENT, onStoreChange);
+  window.addEventListener(RESUME_SYNC_OUTBOX_UPDATED_EVENT, onStoreChange);
 
   return () => {
     window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(DOCUMENT_STORAGE_UPDATED_EVENT, onStoreChange);
+    window.removeEventListener(RESUME_STORAGE_UPDATED_EVENT, onStoreChange);
+    window.removeEventListener(RESUME_SYNC_OUTBOX_UPDATED_EVENT, onStoreChange);
   };
 }
 
@@ -70,17 +75,20 @@ export function getDocumentLibrarySnapshot(
 
   const storage = window.localStorage;
   const storageKey = [
-    storage.getItem("veriworkly:docs:v2:active") ?? "",
+    storage.getItem(RESUME_COLLECTION_STORAGE_KEY) ?? "",
+    storage.getItem(RESUME_ACTIVE_ID_STORAGE_KEY) ?? "",
     refreshKey.toString(),
   ].join("::");
   const nextKey = `${activeType}::${storageKey}`;
 
   if (nextKey !== snapshotCache.key) {
+    const resumeDocs = listSavedResumes().map(mapResumeToLibraryItem);
     const documentDocs = listDocuments()
+      .filter((document) => document.type !== "RESUME")
       .map((document) => loadDocumentById(document.type, document.id))
       .filter((document): document is BaseDocument => Boolean(document))
       .map(mapDocumentToLibraryItem);
-    const allDocs = documentDocs.sort(
+    const allDocs = [...resumeDocs, ...documentDocs].sort(
       (left, right) => Date.parse(right.updatedAt) - Date.parse(left.updatedAt),
     );
 
@@ -99,11 +107,38 @@ export function getDocumentLibrarySnapshot(
   return snapshotCache;
 }
 
+export function mapResumeToLibraryItem(resume: ResumeListItem): DocumentLibraryItem {
+  const template =
+    templateSummaries.find((item) => item.id === resume.templateId) ?? templateSummaries[0];
+
+  return {
+    source: "resume",
+    id: resume.id,
+    type: "RESUME",
+    title: resume.title,
+    description: resume.role || "Role not set",
+    templateId: resume.templateId,
+    templateName: template?.name ?? "Resume template",
+    templateDescription: template?.description ?? "Resume layout",
+    previewImage: template?.previewImage ?? "",
+    updatedAt: resume.updatedAt,
+    sync: resume.sync,
+  };
+}
+
 function describeDocument(document: BaseDocument): string {
-  if (document.type === "RESUME") return "Resume profile data";
-  if (document.type === "COVER_LETTER") return "Cover letter";
-  if (document.type === "FORMAL_LETTER") return "Formal correspondence";
-  if (document.type === "INVOICE") return "Invoice document";
+  if (document.type === "COVER_LETTER") {
+    const content = document.content as {
+      jobTitle?: string;
+      companyName?: string;
+      subject?: string;
+    };
+    return (
+      [content.jobTitle, content.companyName].filter(Boolean).join(" at ") ||
+      content.subject ||
+      "Cover letter"
+    );
+  }
 
   return "Document";
 }

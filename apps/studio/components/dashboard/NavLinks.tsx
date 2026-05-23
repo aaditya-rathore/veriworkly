@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { cn } from "@/lib/utils";
-
 import { siteConfig } from "@/config/site";
 
 const NavLinks = ({ className }: { className?: string }) => {

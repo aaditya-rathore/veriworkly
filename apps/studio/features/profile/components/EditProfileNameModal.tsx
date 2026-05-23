@@ -116,7 +116,7 @@ const EditProfileNameModal = ({ open, onClose, currentName }: EditProfileNameMod
                 </p>
               ) : (
                 <p className="text-muted-foreground/70 pl-1 text-[11px] leading-relaxed font-medium">
-                  This name will be displayed across the studio workspace and shared document links.
+                  This name will be displayed across the studio workspace and shared resume links.
                 </p>
               )}
             </div>
