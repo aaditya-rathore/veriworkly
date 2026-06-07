@@ -7,6 +7,7 @@ import { BillingController } from "#controllers/billingController";
 const router = Router();
 
 router.get("/me", authMiddleware, BillingController.getMe);
+router.get("/history", authMiddleware, BillingController.history);
 
 router.post("/portal", authMiddleware, BillingController.portal);
 router.post("/checkout", authMiddleware, BillingController.checkout);

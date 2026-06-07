@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { getSafeAuthCallback } from "@/lib/auth-redirect";
 import { Input, Badge, Button } from "@veriworkly/ui";
 
 import { AuthCard } from "./AuthCard";
@@ -50,7 +51,8 @@ const OtpForm = ({
       }
 
       toast.success("Successfully signed in!");
-      router.push("/");
+      const callbackURL = new URLSearchParams(window.location.search).get("callbackURL");
+      router.push(getSafeAuthCallback(callbackURL));
       router.refresh();
     } catch (err: unknown) {
       const message =

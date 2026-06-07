@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
-import { backendApiUrl } from "@/lib/backend";
+import { authenticatedFetch } from "@/lib/authenticated-fetch";
 import {
   createDefaultPortfolio,
   createId,
@@ -26,9 +26,14 @@ export type WorkspaceState = "loading" | "ready" | "error";
 export type Publication = { subdomain: string; status: "LIVE" | "GRACE" | "SUSPENDED" } | null;
 export type Billing = { canPublish: boolean; status: string; graceEndsAt?: string | null };
 export type EditorPanel = "profile" | "sections" | "style" | "sharing";
+export type PortfolioWorkspaceBootstrap = {
+  user: { name?: string | null; email?: string | null } | null;
+  workspace: { draft?: unknown; publication?: Publication; billing?: Billing } | null;
+  analytics: { totalViews?: number } | null;
+};
 
 async function fetchPayload(path: string, fallbackMessage: string, init?: RequestInit) {
-  const response = await fetch(backendApiUrl(path), { credentials: "include", ...init });
+  const response = await authenticatedFetch(path, init);
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload.message || fallbackMessage);
   return payload;
@@ -75,6 +80,7 @@ interface PortfolioStoreState {
 
   // Async Actions
   loadWorkspace: () => Promise<void>;
+  hydrateWorkspace: (initialData: PortfolioWorkspaceBootstrap) => void;
   saveDraft: () => Promise<CloudPortfolioDraft | null>;
   publish: () => Promise<void>;
   unpublish: () => Promise<void>;
@@ -150,6 +156,7 @@ export const usePortfolioStore = create<PortfolioStoreState>()(
         const sections = [...state.content.sections];
         const target = index + direction;
         if (target < 0 || target >= sections.length) return {};
+        [sections[index], sections[target]] = [sections[target], sections[index]];
         return {
           content: { ...state.content, sections },
           isDirty: state.ready ? true : state.isDirty,
@@ -182,6 +189,33 @@ export const usePortfolioStore = create<PortfolioStoreState>()(
         isDirty: state.ready ? true : state.isDirty,
         status: state.ready ? "Unsaved changes" : state.status,
       })),
+
+    hydrateWorkspace: ({ user, workspace, analytics }) => {
+      const cloud = workspace?.draft as CloudPortfolioDraft | undefined;
+      const restored = cloud
+        ? ({ ...cloud, content: parsePortfolioContent(cloud.content) } as CloudPortfolioDraft)
+        : null;
+      const content = restored?.content ?? createDefaultPortfolio(user ?? undefined);
+      const slug =
+        restored?.slug ?? (normalizeSlug(user?.name || "portfolio") || "portfolio");
+
+      if (restored) savePortfolioCache(restored);
+
+      set({
+        draft: restored,
+        content,
+        slug,
+        publication: workspace?.publication ?? null,
+        billing: workspace?.billing ?? { canPublish: false, status: "INACTIVE" },
+        analytics: analytics?.totalViews ?? 0,
+        message: workspace ? "" : "Could not load your portfolio workspace.",
+        previewIssue: "",
+        workspaceState: workspace ? "ready" : "error",
+        status: workspace ? "Saved" : "Offline",
+        ready: true,
+        isDirty: false,
+      });
+    },
 
     loadWorkspace: async () => {
       const cached = loadPortfolioCache();
@@ -241,7 +275,7 @@ export const usePortfolioStore = create<PortfolioStoreState>()(
       set({ status: "Saving" });
       savePortfolioCache({ slug: current.slug, content: current.content });
       try {
-        const response = await fetch(backendApiUrl("/portfolios/draft"), {
+        const response = await authenticatedFetch("/portfolios/draft", {
           method: "PUT",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
@@ -292,7 +326,7 @@ export const usePortfolioStore = create<PortfolioStoreState>()(
       const saved = await current.saveDraft();
       if (!saved) return;
       try {
-        const response = await fetch(backendApiUrl("/portfolios/publish"), {
+        const response = await authenticatedFetch("/portfolios/publish", {
           method: "POST",
           credentials: "include",
           headers: { "Content-Type": "application/json" },

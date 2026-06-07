@@ -156,15 +156,16 @@ export const config = {
     environment: (process.env.DODO_PAYMENTS_ENVIRONMENT || "test_mode") as
       | "test_mode"
       | "live_mode",
+    sevenDayProductId: process.env.DODO_PAYMENTS_SEVEN_DAY_PRODUCT_ID || "",
     monthlyProductId: process.env.DODO_PAYMENTS_MONTHLY_PRODUCT_ID || "",
     annualProductId: process.env.DODO_PAYMENTS_ANNUAL_PRODUCT_ID || "",
     checkoutReturnUrl:
       process.env.DODO_PAYMENTS_CHECKOUT_RETURN_URL ||
-      "http://localhost:3004/billing?checkout=complete",
+      "http://localhost:3001/billing?checkout=complete",
     checkoutCancelUrl:
       process.env.DODO_PAYMENTS_CHECKOUT_CANCEL_URL ||
-      "http://localhost:3004/billing?checkout=cancelled",
-    portalReturnUrl: process.env.DODO_PAYMENTS_PORTAL_RETURN_URL || "http://localhost:3004/billing",
+      "http://localhost:3001/billing?checkout=cancelled",
+    portalReturnUrl: process.env.DODO_PAYMENTS_PORTAL_RETURN_URL || "http://localhost:3001/billing",
   },
 
   r2: {

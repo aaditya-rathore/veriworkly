@@ -1,10 +1,7 @@
-"use client";
-
 import type { LucideIcon } from "lucide-react";
 
 import {
   Home,
-  Settings,
   BookOpen,
   FileText,
   KeyRound,
@@ -50,7 +47,7 @@ export const mainNav: StudioNavItem[] = [
   },
 
   {
-    href: siteConfig.links.portfolio,
+    href: `${siteConfig.links.portfolio}/editor`,
     label: "Portfolio",
     icon: PanelsTopLeft,
     external: true,
@@ -90,13 +87,6 @@ export const bottomNav: StudioNavItem[] = [
     label: "API keys",
     icon: KeyRound,
     match: (pathname) => pathname.startsWith("/api-keys"),
-  },
-
-  {
-    href: "/settings",
-    label: "Settings",
-    icon: Settings,
-    match: (pathname) => pathname.startsWith("/settings"),
   },
 ];
 

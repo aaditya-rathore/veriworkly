@@ -1,4 +1,5 @@
 import { backendApiUrl } from "@/lib/constants";
+import { clearInvalidSessionAndRedirect, isInvalidSessionResponse } from "@/lib/invalid-session";
 
 interface ApiSuccessResponse<T> {
   success: boolean;
@@ -34,6 +35,10 @@ export async function fetchApiData<T>(
   });
 
   if (!response.ok) {
+    if (isInvalidSessionResponse(path, response.status)) {
+      await clearInvalidSessionAndRedirect();
+    }
+
     if (response.status === 404 && nullOnNotFound) {
       return null as unknown as T;
     }

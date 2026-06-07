@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const checkoutSchema = z.object({
-  interval: z.enum(["monthly", "annual"]),
+  interval: z.enum(["seven_day", "monthly", "annual"]),
   redirectUrl: z
     .string()
     .trim()

@@ -1,4 +1,5 @@
 import { backendApiUrl } from "@/lib/constants";
+import { clearInvalidSessionAndRedirect, isInvalidSessionResponse } from "@/lib/invalid-session";
 
 import { useUserStore } from "@/store/useUserStore";
 
@@ -39,10 +40,6 @@ async function fetchAccountProfileSummary(cookieHeader?: string) {
       return null;
     }
 
-    if (typeof window !== "undefined" && !document.cookie.includes("veriworkly-auth")) {
-      return null;
-    }
-
     const response = await fetch(backendApiUrl("/users/me"), {
       method: "GET",
       headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
@@ -50,6 +47,9 @@ async function fetchAccountProfileSummary(cookieHeader?: string) {
     });
 
     if (!response.ok) {
+      if (typeof window !== "undefined" && isInvalidSessionResponse("/users/me", response.status)) {
+        await clearInvalidSessionAndRedirect();
+      }
       return null;
     }
 

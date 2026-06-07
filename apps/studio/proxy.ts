@@ -1,8 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { getSafeAuthCallback } from "@/lib/auth-redirect";
+
 export const config = {
-  matcher: ["/admin/:path*", "/profile/:path*", "/api-keys/:path*", "/login"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
+
+const PUBLIC_PATH_PREFIXES = ["/login", "/share", "/api/og"];
+const PUBLIC_FILES = new Set(["/robots.txt", "/sitemap.xml", "/manifest.json"]);
+
+export function isPublicStudioPath(pathname: string) {
+  return (
+    PUBLIC_FILES.has(pathname) ||
+    pathname.includes(".") ||
+    PUBLIC_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+  );
+}
 
 export default async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -12,15 +25,19 @@ export default async function proxy(request: NextRequest) {
     request.cookies.get("veriworkly-auth.session_token")?.value;
 
   const isLoginPage = pathname === "/login";
+  const isPublicPath = isPublicStudioPath(pathname);
   const isAuthenticated = !!sessionCookie;
 
   if (isLoginPage && isAuthenticated) {
-    return NextResponse.redirect(new URL("/", request.url));
+    const callbackURL = getSafeAuthCallback(request.nextUrl.searchParams.get("callbackURL"));
+    const redirectUrl = new URL(callbackURL, request.url);
+
+    return NextResponse.redirect(redirectUrl);
   }
 
-  if (!isLoginPage && !isAuthenticated) {
+  if (!isPublicPath && !isAuthenticated) {
     const loginUrl = new URL("/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
+    loginUrl.searchParams.set("callbackURL", `${pathname}${request.nextUrl.search}`);
 
     return NextResponse.redirect(loginUrl);
   }

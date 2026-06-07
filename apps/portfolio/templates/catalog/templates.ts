@@ -7,6 +7,8 @@ export interface TemplateSummary {
   name: string;
   note: string;
   mood: string;
+  audience: string;
+  strengths: string[];
 }
 
 export const templates: TemplateSummary[] = [
@@ -15,12 +17,16 @@ export const templates: TemplateSummary[] = [
     name: "Signal",
     note: "A precise, proof-first profile for product engineers.",
     mood: "Structured / technical",
+    audience: "Engineers and product leaders",
+    strengths: ["Project proof", "Clear timelines", "Technical credibility"],
   },
   {
     id: "atelier",
     name: "Atelier",
     note: "An editorial canvas for designers and independent builders.",
     mood: "Expressive / editorial",
+    audience: "Designers and creative builders",
+    strengths: ["Visual storytelling", "Editorial rhythm", "Distinctive voice"],
   },
 ];
 

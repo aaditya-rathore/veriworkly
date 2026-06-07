@@ -10,12 +10,13 @@ import { dodoWebhookEventSchema, dodoSubscriptionSchema } from "#validators/bill
 import { prisma } from "#utils/prisma";
 import { logger } from "#utils/logger";
 import { ApiError } from "#utils/errors";
+import { cacheDel, getRedis } from "#utils/redis";
 import {
   revalidatePublicPortfolios,
   invalidatePublicPortfolioCaches,
 } from "#utils/portfolioPublicationCache";
 
-type BillingIntervalInput = "monthly" | "annual";
+type BillingIntervalInput = "seven_day" | "monthly" | "annual";
 
 function getDodoClient() {
   if (!config.dodo.apiKey) throw new ApiError(503, "Portfolio billing is not configured.");
@@ -49,6 +50,7 @@ function statusFromDodo(rawStatus: string) {
 }
 
 function intervalFromProduct(productId: string) {
+  if (productId === config.dodo.sevenDayProductId) return "SEVEN_DAY" as const;
   if (productId === config.dodo.annualProductId) return "ANNUAL" as const;
   if (productId === config.dodo.monthlyProductId) return "MONTHLY" as const;
 
@@ -80,32 +82,63 @@ export class BillingService {
   }
 
   static async getSummary(userId: string) {
-    const subscription = await this.getLatestSubscription(userId);
-    const access = accessStatus(subscription);
+    const [user, subscription] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          portfolioPlan: true,
+          portfolioCanPublish: true,
+          portfolioAccessEndsAt: true,
+        },
+      }),
+      this.getLatestSubscription(userId),
+    ]);
+
+    if (!user) throw new ApiError(404, "User not found");
+    const entitlementCurrent =
+      user.portfolioCanPublish &&
+      (!user.portfolioAccessEndsAt || user.portfolioAccessEndsAt > new Date());
 
     return {
-      plan: subscription ? "PORTFOLIO_PRO" : "FREE",
+      plan: user.portfolioPlan,
       status: subscription?.status ?? "INACTIVE",
       interval: subscription?.interval ?? null,
       currentPeriodEnd: subscription?.currentPeriodEnd ?? null,
       cancelAtPeriodEnd: subscription?.cancelAtPeriodEnd ?? false,
       graceEndsAt: subscription?.graceEndsAt ?? null,
-      canPublish: access.canPublish,
-      publicationStatus: access.publicationStatus,
-      pricing: { monthly: 12, annual: 120, currency: "USD" },
+      canPublish: entitlementCurrent,
+      eligibleForTrial: !subscription,
+      accessEndsAt: user.portfolioAccessEndsAt,
+      publicationStatus: accessStatus(subscription).publicationStatus,
+      pricing: { sevenDay: 4, monthly: 12, annual: 120, currency: "USD" },
     };
   }
 
   static async requirePublishAccess(userId: string) {
-    const subscription = await this.getLatestSubscription(userId);
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { portfolioCanPublish: true, portfolioAccessEndsAt: true },
+    });
 
-    if (!accessStatus(subscription).canPublish)
+    if (
+      !user?.portfolioCanPublish ||
+      (user.portfolioAccessEndsAt && user.portfolioAccessEndsAt <= new Date())
+    )
       throw new ApiError(
         402,
         "Publishing requires an active VeriWorkly Portfolio Pro subscription.",
       );
 
-    return subscription!;
+    return user;
+  }
+
+  static async getHistory(userId: string) {
+    return prisma.billingWebhookEvent.findMany({
+      where: { userId, status: "PROCESSED" },
+      select: { id: true, providerEventId: true, type: true, processedAt: true, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    });
   }
 
   static async createCheckout(
@@ -113,14 +146,33 @@ export class BillingService {
     interval: BillingIntervalInput,
     redirectUrl?: string,
   ) {
+    const checkoutLockKey = `billing:checkout:${userId}`;
+    const lockAcquired =
+      (await getRedis().set(checkoutLockKey, interval, { NX: true, EX: 600 })) === "OK";
+    if (!lockAcquired)
+      throw new ApiError(409, "A billing checkout is already active. Complete it or try again soon.");
+
+    try {
     const productId =
-      interval === "annual" ? config.dodo.annualProductId : config.dodo.monthlyProductId;
+      interval === "annual"
+        ? config.dodo.annualProductId
+        : interval === "seven_day"
+          ? config.dodo.sevenDayProductId
+          : config.dodo.monthlyProductId;
 
     if (!productId) throw new ApiError(503, "Portfolio billing product is not configured.");
 
-    const user = await prisma.user.findUnique({ where: { id: userId } });
+    const [user, previousSubscription] = await Promise.all([
+      prisma.user.findUnique({ where: { id: userId } }),
+      prisma.subscription.findFirst({ where: { userId }, select: { id: true } }),
+    ]);
 
     if (!user) throw new ApiError(404, "User not found");
+    if (
+      user.portfolioCanPublish &&
+      (!user.portfolioAccessEndsAt || user.portfolioAccessEndsAt > new Date())
+    )
+      throw new ApiError(409, "You already have an active Portfolio Pro subscription.");
 
     const buildRedirectUrl = (base: string, callback?: string) => {
       if (!callback) return base;
@@ -141,6 +193,9 @@ export class BillingService {
       product_cart: [{ product_id: productId, quantity: 1 }],
       customer: { email: user.email, name: user.name || "VeriWorkly User" },
       metadata: { veriworkly_user_id: userId, veriworkly_product: "portfolio_pro" },
+      ...(interval === "monthly" && !previousSubscription
+        ? { subscription_data: { trial_period_days: 7 } }
+        : {}),
       return_url: buildRedirectUrl(config.dodo.checkoutReturnUrl, redirectUrl),
       cancel_url: buildRedirectUrl(config.dodo.checkoutCancelUrl, redirectUrl),
     });
@@ -148,7 +203,11 @@ export class BillingService {
     if (!checkout.checkout_url)
       throw new ApiError(502, "Billing provider did not return a checkout URL.");
 
-    return { url: checkout.checkout_url };
+      return { url: checkout.checkout_url };
+    } catch (error) {
+      await getRedis().del(checkoutLockKey);
+      throw error;
+    }
   }
 
   static async createPortal(userId: string) {
@@ -225,7 +284,14 @@ export class BillingService {
     try {
       if (parsedEvent.type.startsWith("subscription.")) {
         const subscriptionData = dodoSubscriptionSchema.parse(parsedEvent.data);
-        await this.applySubscriptionEvent(subscriptionData, new Date(parsedEvent.timestamp));
+        const userId = await this.applySubscriptionEvent(
+          subscriptionData,
+          new Date(parsedEvent.timestamp),
+        );
+        await prisma.billingWebhookEvent.update({
+          where: { id: stored.id },
+          data: { userId },
+        });
       }
 
       await prisma.billingWebhookEvent.update({
@@ -268,10 +334,18 @@ export class BillingService {
 
     if (!userId)
       throw new ApiError(400, "Subscription webhook is missing VeriWorkly user metadata.");
+    if (
+      existing?.userId &&
+      subscription.metadata.veriworkly_user_id &&
+      existing.userId !== subscription.metadata.veriworkly_user_id
+    )
+      throw new ApiError(400, "Subscription webhook user metadata does not match its owner.");
 
-    if (existing?.lastWebhookAt && existing.lastWebhookAt >= eventTime) return;
+    if (existing?.lastWebhookAt && existing.lastWebhookAt >= eventTime) return userId;
 
     const normalizedStatus = statusFromDodo(subscription.status);
+    const interval = intervalFromProduct(subscription.product_id);
+    if (!interval) throw new ApiError(400, "Subscription webhook references an unknown product.");
     const pastDue = normalizedStatus === "PAST_DUE";
     const graceEndsAt = pastDue ? addDays(eventTime, config.portfolio.graceDays) : null;
     const currentPeriodEnd = subscription.next_billing_date
@@ -287,7 +361,7 @@ export class BillingService {
         data: {
           providerCustomerId: subscription.customer.customer_id,
           providerPriceId: subscription.product_id,
-          interval: intervalFromProduct(subscription.product_id),
+          interval,
           rawStatus: subscription.status,
           status: normalizedStatus,
           currentPeriodEnd,
@@ -312,7 +386,7 @@ export class BillingService {
             providerCustomerId: subscription.customer.customer_id,
             providerPriceId: subscription.product_id,
             providerSubId: subscription.subscription_id,
-            interval: intervalFromProduct(subscription.product_id),
+            interval,
             rawStatus: subscription.status,
             status: normalizedStatus,
             currentPeriodEnd,
@@ -324,6 +398,14 @@ export class BillingService {
       }
 
       const access = accessStatus({ status: normalizedStatus, currentPeriodEnd, graceEndsAt });
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          portfolioPlan: access.canPublish ? "PORTFOLIO_PRO" : "FREE",
+          portfolioCanPublish: access.canPublish,
+          portfolioAccessEndsAt: access.canPublish ? currentPeriodEnd : graceEndsAt,
+        },
+      });
       await tx.portfolioPublication.updateMany({
         where: { userId },
         data:
@@ -342,5 +424,8 @@ export class BillingService {
       await invalidatePublicPortfolioCaches([publication.subdomain]);
       void revalidatePublicPortfolios([publication.subdomain]);
     }
+
+    await cacheDel(`user:profile:v2:${userId}`);
+    return userId;
   }
 }
