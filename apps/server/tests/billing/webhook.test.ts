@@ -12,6 +12,9 @@ const prismaMock = {
     updateMany: vi.fn(),
     create: vi.fn(),
   },
+  user: {
+    update: vi.fn(),
+  },
   portfolioPublication: {
     updateMany: vi.fn(),
     findUnique: vi.fn(),
@@ -36,6 +39,7 @@ vi.mock("../../src/config", () => ({
     },
     dodo: {
       webhookSecret: "secret",
+      sevenDayProductId: "prod_seven_day",
       monthlyProductId: "prod_monthly",
       annualProductId: "prod_annual",
     },
@@ -49,9 +53,11 @@ describe("billing webhook processing and idempotency", () => {
     prismaMock.billingWebhookEvent.create.mockReset();
     prismaMock.billingWebhookEvent.findUnique.mockReset();
     prismaMock.billingWebhookEvent.update.mockReset();
+    prismaMock.billingWebhookEvent.update.mockResolvedValue({ retryCount: 0 });
     prismaMock.subscription.findUnique.mockReset();
     prismaMock.subscription.updateMany.mockReset();
     prismaMock.subscription.create.mockReset();
+    prismaMock.user.update.mockReset();
     prismaMock.portfolioPublication.updateMany.mockReset();
     prismaMock.portfolioPublication.findUnique.mockReset();
   });
@@ -85,11 +91,20 @@ describe("billing webhook processing and idempotency", () => {
     prismaMock.subscription.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.portfolioPublication.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.portfolioPublication.findUnique.mockResolvedValue({ subdomain: "my-portfolio" });
+    prismaMock.user.update.mockResolvedValue({ id: "user_123" });
 
     const result = await BillingService.processWebhook("evt_123", validEvent);
 
     expect(result).toEqual({ duplicate: false });
     expect(prismaMock.billingWebhookEvent.create).toHaveBeenCalled();
+    expect(prismaMock.user.update).toHaveBeenCalledWith({
+      where: { id: "user_123" },
+      data: {
+        portfolioPlan: "PORTFOLIO_PRO",
+        portfolioCanPublish: true,
+        portfolioAccessEndsAt: null,
+      },
+    });
     expect(prismaMock.billingWebhookEvent.update).toHaveBeenCalledWith({
       where: { id: "evt_1" },
       data: { status: "PROCESSED", processedAt: expect.any(Date) },
@@ -125,6 +140,7 @@ describe("billing webhook processing and idempotency", () => {
     prismaMock.subscription.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.portfolioPublication.updateMany.mockResolvedValue({ count: 1 });
     prismaMock.portfolioPublication.findUnique.mockResolvedValue({ subdomain: "my-portfolio" });
+    prismaMock.user.update.mockResolvedValue({ id: "user_123" });
 
     const result = await BillingService.processWebhook("evt_123", validEvent);
 
@@ -188,5 +204,47 @@ describe("billing webhook processing and idempotency", () => {
     // Since existing subscription lastWebhookAt is newer, updateMany/create should not be called inside transaction
     expect(prismaMock.subscription.updateMany).not.toHaveBeenCalled();
     expect(prismaMock.subscription.create).not.toHaveBeenCalled();
+  });
+
+  it("rejects active subscriptions for unknown products", async () => {
+    const { BillingService } = await import("../../src/services/billingService");
+
+    prismaMock.billingWebhookEvent.create.mockResolvedValue({
+      id: "evt_1",
+      status: "PROCESSING",
+      retryCount: 0,
+    });
+    prismaMock.subscription.findUnique.mockResolvedValue(null);
+
+    await expect(
+      BillingService.processWebhook("evt_unknown_product", {
+        ...validEvent,
+        data: { ...validEvent.data, product_id: "prod_unknown" },
+      }),
+    ).rejects.toThrow("unknown product");
+
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it("rejects webhook metadata that conflicts with the subscription owner", async () => {
+    const { BillingService } = await import("../../src/services/billingService");
+
+    prismaMock.billingWebhookEvent.create.mockResolvedValue({
+      id: "evt_1",
+      status: "PROCESSING",
+      retryCount: 0,
+    });
+    prismaMock.subscription.findUnique.mockResolvedValue({
+      id: "sub_1",
+      providerSubId: "sub_123",
+      userId: "different_user",
+      lastWebhookAt: null,
+    });
+
+    await expect(BillingService.processWebhook("evt_wrong_owner", validEvent)).rejects.toThrow(
+      "does not match its owner",
+    );
+
+    expect(prismaMock.user.update).not.toHaveBeenCalled();
   });
 });

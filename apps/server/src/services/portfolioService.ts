@@ -43,6 +43,29 @@ function normalizeReferrerHost(referrer?: string) {
   }
 }
 
+function collectAssetIds(content: PortfolioContentInput) {
+  const ids = new Set<string>();
+  if (content.identity.avatar?.id) ids.add(content.identity.avatar.id);
+  if (content.seo.socialImage?.id) ids.add(content.seo.socialImage.id);
+
+  for (const section of content.sections) {
+    for (const item of section.items) {
+      const cover = item.coverImage;
+      if (
+        cover &&
+        typeof cover === "object" &&
+        "id" in cover &&
+        typeof cover.id === "string" &&
+        cover.id
+      ) {
+        ids.add(cover.id);
+      }
+    }
+  }
+
+  return [...ids];
+}
+
 export class PortfolioService {
   static async listPublicPortfolios(limit?: number, offset?: number) {
     const cacheKey =
@@ -92,11 +115,7 @@ export class PortfolioService {
         updatedAt: true,
         user: {
           select: {
-            subscriptions: {
-              orderBy: { updatedAt: "desc" },
-              take: 1,
-              select: { graceEndsAt: true },
-            },
+            portfolioAccessEndsAt: true,
           },
         },
       },
@@ -104,7 +123,7 @@ export class PortfolioService {
 
     if (!publication || publication.status === "SUSPENDED") return null;
 
-    const graceEndsAt = publication.user.subscriptions[0]?.graceEndsAt;
+    const graceEndsAt = publication.user.portfolioAccessEndsAt;
 
     if (publication.status === "GRACE" && (!graceEndsAt || graceEndsAt <= new Date())) {
       await prisma.portfolioPublication.update({
@@ -314,6 +333,15 @@ export class PortfolioService {
         "Complete the required portfolio details before publishing.",
         publishable.error.flatten(),
       );
+    }
+
+    const assetIds = collectAssetIds(publishable.data);
+    if (assetIds.length) {
+      const ownedAssets = await prisma.portfolioAsset.count({
+        where: { id: { in: assetIds }, userId, status: "READY" },
+      });
+      if (ownedAssets !== assetIds.length)
+        throw new ApiError(400, "Portfolio contains an unavailable or invalid image.");
     }
 
     const existingPublication = await prisma.portfolioPublication.findUnique({
@@ -572,9 +600,9 @@ export class PortfolioService {
       select: { id: true },
     });
 
-    if (!publication) return { totalViews: 0, daily: [] };
+    if (!publication) return { totalViews: 0, daily: [], referrers: [] };
 
-    const [totals, daily] = await Promise.all([
+    const [totals, daily, referrers] = await Promise.all([
       prisma.portfolioViewDaily.aggregate({
         where: { publicationId: publication.id },
         _sum: { count: true },
@@ -586,6 +614,13 @@ export class PortfolioService {
         _sum: { count: true },
         orderBy: { date: "desc" },
         take: 30,
+      }),
+      prisma.portfolioViewDaily.groupBy({
+        by: ["referrerHost"],
+        where: { publicationId: publication.id, referrerHost: { not: "" } },
+        _sum: { count: true },
+        orderBy: { _sum: { count: "desc" } },
+        take: 10,
       }),
     ]);
 
@@ -620,6 +655,10 @@ export class PortfolioService {
     return {
       totalViews,
       daily: sortedDaily,
+      referrers: referrers.map((item) => ({
+        host: item.referrerHost,
+        count: item._sum.count ?? 0,
+      })),
     };
   }
 }

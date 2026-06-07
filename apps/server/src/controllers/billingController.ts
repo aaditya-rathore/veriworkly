@@ -19,6 +19,14 @@ export class BillingController {
     }
   }
 
+  static async history(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json(createSuccessResponse(await BillingService.getHistory(requireAuthUser(req).id)));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async checkout(req: Request, res: Response, next: NextFunction) {
     try {
       const input = checkoutSchema.parse(req.body);

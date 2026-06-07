@@ -19,6 +19,9 @@ model User {
   emailVerified        Boolean               @default(false)
   image                String?
   autoSyncEnabled      Boolean               @default(false)
+  portfolioPlan        PortfolioPlan         @default(FREE)
+  portfolioCanPublish  Boolean               @default(false)
+  portfolioAccessEndsAt DateTime?
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
   sessions             Session[]
@@ -29,10 +32,16 @@ model User {
   roadmapInteractions  RoadmapInteraction[]
   apiKeys              ApiKey[]
   subscriptions        Subscription[]
+  billingWebhookEvents BillingWebhookEvent[]
   portfolioPublication PortfolioPublication?
   portfolioAssets      PortfolioAsset[]
 
   @@index([email])
+}
+
+enum PortfolioPlan {
+  FREE
+  PORTFOLIO_PRO
 }
 
 model Session {
@@ -142,6 +151,7 @@ enum SubscriptionStatus {
 }
 
 enum BillingInterval {
+  SEVEN_DAY
   MONTHLY
   ANNUAL
 }
@@ -203,6 +213,8 @@ enum BillingWebhookStatus {
 model BillingWebhookEvent {
   id              String               @id @default(cuid())
   providerEventId String               @unique
+  userId          String?
+  user            User?                @relation(fields: [userId], references: [id], onDelete: SetNull)
   type            String
   payload         Json
   status          BillingWebhookStatus @default(PROCESSING)
@@ -215,6 +227,7 @@ model BillingWebhookEvent {
 
   @@index([type, createdAt])
   @@index([status, createdAt])
+  @@index([userId, createdAt])
 }
 
 enum PortfolioAssetKind {

@@ -1,34 +1,35 @@
-import { useTheme } from "next-themes";
+"use client";
+
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, Moon, Sun, User } from "lucide-react";
+import { ChevronDown, CreditCard, LogOut, User, Settings } from "lucide-react";
+
+import { signOutCurrentUser } from "@/features/auth/services/current-user";
 
 import { cn } from "@/lib/utils";
+
+import AccountMenuItem from "./AccountMenuItem";
+import AccountMenuTheme from "./AccountMenuTheme";
+
+import { useUserStore } from "@/store/useUserStore";
 
 export function AccountMenu({
   collapsed,
   displayName,
   email,
   version,
-  onProfile,
-  onLogout,
 }: {
   collapsed: boolean;
   displayName: string;
   email: string;
   version: string;
-  onProfile: () => void;
-  onLogout: () => void;
 }) {
-  const { resolvedTheme, setTheme } = useTheme();
-
-  const themeLabel = resolvedTheme === "dark" ? "Light mode" : "Dark mode";
-
-  const onToggleTheme = () => {
-    setTheme(resolvedTheme === "dark" ? "light" : "dark");
-  };
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  const { logout } = useUserStore();
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -48,7 +49,14 @@ export function AccountMenu({
     };
   }, []);
 
-  const close = () => setOpen(false);
+  const handleLogout = async () => {
+    await signOutCurrentUser();
+
+    logout();
+
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <div className="relative" ref={rootRef}>
@@ -72,28 +80,29 @@ export function AccountMenu({
             icon={User}
             label="Profile"
             onClick={() => {
-              close();
-              onProfile();
+              router.push("/profile");
             }}
           />
 
           <AccountMenuItem
-            icon={themeLabel === "Light mode" ? Sun : Moon}
-            label={themeLabel}
+            icon={CreditCard}
+            label="Billing"
             onClick={() => {
-              close();
-              onToggleTheme();
+              router.push("/billing");
             }}
           />
+
           <AccountMenuItem
-            danger
-            icon={LogOut}
-            label="Logout"
+            icon={Settings}
+            label="Settings"
             onClick={() => {
-              close();
-              onLogout();
+              router.push("/settings");
             }}
           />
+
+          <AccountMenuTheme setOpen={setOpen} />
+
+          <AccountMenuItem danger icon={LogOut} label="Logout" onClick={handleLogout} />
 
           <div className="text-muted border-border/70 mt-1 border-t px-3 pt-2 text-[11px]">
             {version} - Terms
@@ -128,32 +137,5 @@ export function AccountMenu({
         ) : null}
       </button>
     </div>
-  );
-}
-
-function AccountMenuItem({
-  danger,
-  icon: Icon,
-  label,
-  onClick,
-}: {
-  danger?: boolean;
-  icon: typeof User;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      className={cn(
-        "hover:bg-accent/10 focus-visible:bg-accent/10 flex h-9 w-full items-center gap-2 rounded-lg px-3 text-sm outline-none",
-        danger && "text-destructive hover:bg-destructive/10 focus-visible:bg-destructive/10",
-      )}
-      onClick={onClick}
-      role="menuitem"
-    >
-      <Icon className="h-4 w-4" />
-      {label}
-    </button>
   );
 }

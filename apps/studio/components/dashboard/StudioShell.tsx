@@ -23,7 +23,6 @@ import { WorkspaceSearchModal } from "@/components/dashboard/WorkspaceSearchModa
 import { NewDocumentButton, NewDocumentModal } from "@/components/dashboard/NewDocumentModal";
 
 import { getDocumentEditorPath } from "@/features/documents/core/routes";
-import { signOutCurrentUser } from "@/features/auth/services/current-user";
 import { createDocument } from "@/features/documents/services/document-workspace-service";
 
 import { cn } from "@/lib/utils";
@@ -41,7 +40,7 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { user, logout } = useUserStore();
+  const { user } = useUserStore();
 
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -54,15 +53,6 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
   const createNewDocument = (type: DocumentType) => {
     const document = createDocument(type);
     router.push(getDocumentEditorPath(type, document.id));
-  };
-
-  const handleLogout = async () => {
-    await signOutCurrentUser();
-
-    logout();
-
-    router.push("/login");
-    router.refresh();
   };
 
   useEffect(() => {
@@ -166,10 +156,8 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
           <AccountMenu
             email={email}
             collapsed={collapsed}
-            onLogout={handleLogout}
             version={STUDIO_VERSION}
             displayName={displayName}
-            onProfile={() => router.push("/profile")}
           />
         </div>
       </aside>

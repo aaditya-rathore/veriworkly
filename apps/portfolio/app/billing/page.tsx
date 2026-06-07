@@ -1,10 +1,5 @@
-import type { Metadata } from "next";
-import { BillingWorkspace } from "@/components/BillingWorkspace";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Portfolio Pro billing",
-  robots: { index: false, follow: false },
-};
-export default function BillingPage() {
-  return <BillingWorkspace />;
+export default async function BillingPage() {
+  redirect(`${process.env.NEXT_PUBLIC_STUDIO_URL || "http://localhost:3001"}/billing`);
 }

@@ -51,18 +51,14 @@ async function suspendExpiredGracePeriods() {
         subdomain: true,
         user: {
           select: {
-            subscriptions: {
-              orderBy: { updatedAt: "desc" },
-              take: 1,
-              select: { graceEndsAt: true },
-            },
+            portfolioAccessEndsAt: true,
           },
         },
       },
     });
 
     const expired = expiredPublications.filter((publication) => {
-      const graceEndsAt = publication.user.subscriptions[0]?.graceEndsAt;
+      const graceEndsAt = publication.user.portfolioAccessEndsAt;
       return !graceEndsAt || graceEndsAt <= now;
     });
 

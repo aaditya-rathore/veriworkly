@@ -1,12 +1,24 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 const PLATFORM_HOST = "portfolio.veriworkly.com";
-const protectedPaths = ["/dashboard", "/billing", "/preview"];
+const publicPlatformPaths = ["/", "/pricing", "/portfolios", "/user", "/templates"];
+
+export function isPublicPlatformPath(path: string) {
+  return publicPlatformPaths.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
 
 export default function proxy(request: NextRequest) {
   const hostname = (request.headers.get("host") ?? "").split(":")[0];
   const path = request.nextUrl.pathname;
-  if (protectedPaths.some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+  const isPlatformHost =
+    hostname === PLATFORM_HOST || hostname === "localhost" || hostname === "portfolio.localhost";
+
+  if (
+    isPlatformHost &&
+    !isPublicPlatformPath(path) &&
+    !path.startsWith("/api") &&
+    !path.includes(".")
+  ) {
     const hasSession = request.cookies
       .getAll()
       .some((cookie) => cookie.name.startsWith("veriworkly-auth"));
@@ -21,8 +33,6 @@ export default function proxy(request: NextRequest) {
   if (path.startsWith("/_next") || path.startsWith("/api") || path.includes(".")) {
     return NextResponse.next();
   }
-  const isPlatformHost =
-    hostname === PLATFORM_HOST || hostname === "localhost" || hostname === "portfolio.localhost";
   if (isPlatformHost) {
     const match = path.match(/^\/user\/([^/]+)(.*)$/);
     return match

@@ -1,8 +1,8 @@
 :root {
-  --color-paper: oklch(97% 0.008 95);
-  --color-paper-2: oklch(94% 0.01 95);
+  --color-paper: oklch(97.5% 0.006 250);
+  --color-paper-2: oklch(94.5% 0.009 250);
   --color-panel: oklch(100% 0 0);
-  --color-panel-raised: oklch(99% 0.004 95);
+  --color-panel-raised: oklch(99% 0.004 250);
   --color-ink: oklch(20% 0.012 250);
   --color-ink-soft: oklch(31% 0.018 250);
   --color-muted: oklch(49% 0.018 250);
@@ -22,7 +22,7 @@
   --color-panel-20: oklch(100% 0 0 / 20%);
   --color-panel-22: oklch(100% 0 0 / 22%);
   --color-shadow: oklch(10% 0.02 250 / 18%);
-  --color-paper-glass: oklch(97% 0.008 95 / 90%);
+  --color-paper-glass: oklch(97.5% 0.006 250 / 90%);
   --font-body: "Geist", "Inter", Arial, Helvetica, sans-serif;
   --font-display: "Geist", "Inter", Arial, Helvetica, sans-serif;
   --font-mono: "Geist Mono", "SFMono-Regular", Consolas, monospace;
