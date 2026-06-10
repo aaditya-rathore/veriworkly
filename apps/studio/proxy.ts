@@ -27,6 +27,7 @@ export default async function proxy(request: NextRequest) {
   const isLoginPage = pathname === "/login";
   const isPublicPath = isPublicStudioPath(pathname);
   const isAuthenticated = !!sessionCookie;
+  const isGuest = !!request.cookies.get("veriworkly-guest-mode")?.value;
 
   if (isLoginPage && isAuthenticated) {
     const callbackURL = getSafeAuthCallback(request.nextUrl.searchParams.get("callbackURL"));
@@ -35,7 +36,7 @@ export default async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (!isPublicPath && !isAuthenticated) {
+  if (!isPublicPath && !isAuthenticated && !isGuest) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackURL", `${pathname}${request.nextUrl.search}`);
 
