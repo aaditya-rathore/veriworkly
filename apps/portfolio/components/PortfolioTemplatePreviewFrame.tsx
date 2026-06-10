@@ -7,7 +7,7 @@ import type { TemplateId } from "@/lib/portfolio";
 export function PortfolioTemplatePreviewFrame({
   templateId,
   title,
-  image = true,
+  image = false,
   compact = false,
   interactive = false,
   href = `/templates/${templateId}/preview`,

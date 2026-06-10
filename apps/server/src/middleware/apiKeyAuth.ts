@@ -12,9 +12,7 @@ import { createErrorResponse } from "#utils/errors";
 
 export const apiKeyAuth = async (req: Request, res: Response, next: NextFunction) => {
   const apiKeyHeaderValue = req.headers["x-api-key"];
-  const apiKeyHeader = Array.isArray(apiKeyHeaderValue)
-    ? apiKeyHeaderValue[0]
-    : apiKeyHeaderValue;
+  const apiKeyHeader = Array.isArray(apiKeyHeaderValue) ? apiKeyHeaderValue[0] : apiKeyHeaderValue;
 
   const authorizationHeaderValue = req.headers.authorization;
   const authorizationHeader = Array.isArray(authorizationHeaderValue)
