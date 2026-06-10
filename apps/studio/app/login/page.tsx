@@ -22,7 +22,6 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGuestAccess = () => {
-    document.cookie = "veriworkly-guest-mode=true; path=/; max-age=86400; SameSite=Lax";
     router.push("/");
   };
 
