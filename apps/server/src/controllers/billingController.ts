@@ -5,10 +5,15 @@ import { z } from "zod";
 import { requireAuthUser } from "#middleware/auth";
 
 import { BillingService } from "#services/billingService";
+import { CreditService } from "#services/creditService";
 
 import { ApiError, createSuccessResponse, handleValidationError } from "#utils/errors";
 
-import { checkoutSchema, dodoWebhookHeaderSchema } from "#validators/billingValidator";
+import {
+  checkoutSchema,
+  creditPackCheckoutSchema,
+  dodoWebhookHeaderSchema,
+} from "#validators/billingValidator";
 
 export class BillingController {
   static async getMe(req: Request, res: Response, next: NextFunction) {
@@ -27,6 +32,22 @@ export class BillingController {
     }
   }
 
+  static async credits(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json(createSuccessResponse(await CreditService.getWallet(requireAuthUser(req).id)));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async creditHistory(req: Request, res: Response, next: NextFunction) {
+    try {
+      res.json(createSuccessResponse(await CreditService.getHistory(requireAuthUser(req).id)));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async checkout(req: Request, res: Response, next: NextFunction) {
     try {
       const input = checkoutSchema.parse(req.body);
@@ -35,6 +56,7 @@ export class BillingController {
         createSuccessResponse(
           await BillingService.createCheckout(
             requireAuthUser(req).id,
+            input.productKey,
             input.interval,
             input.redirectUrl,
           ),
@@ -50,6 +72,23 @@ export class BillingController {
       res.json(createSuccessResponse(await BillingService.createPortal(requireAuthUser(req).id)));
     } catch (error) {
       next(error);
+    }
+  }
+
+  static async creditPackCheckout(req: Request, res: Response, next: NextFunction) {
+    try {
+      const input = creditPackCheckoutSchema.parse(req.body);
+      res.json(
+        createSuccessResponse(
+          await BillingService.createCreditPackCheckout(
+            requireAuthUser(req).id,
+            input.packKey,
+            input.redirectUrl,
+          ),
+        ),
+      );
+    } catch (error) {
+      next(error instanceof z.ZodError ? handleValidationError(error) : error);
     }
   }
 

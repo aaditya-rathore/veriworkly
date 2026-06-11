@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@prisma/client";
 
+const { affiliateMock, creditMock } = vi.hoisted(() => ({
+  affiliateMock: { createCommission: vi.fn() },
+  creditMock: { grant: vi.fn(), getWallet: vi.fn() },
+}));
+
 const prismaMock = {
   billingWebhookEvent: {
     create: vi.fn(),
@@ -11,6 +16,11 @@ const prismaMock = {
     findUnique: vi.fn(),
     updateMany: vi.fn(),
     create: vi.fn(),
+  },
+  entitlementGrant: {
+    updateMany: vi.fn(),
+    upsert: vi.fn(),
+    findFirst: vi.fn(),
   },
   user: {
     update: vi.fn(),
@@ -30,6 +40,21 @@ vi.mock("../../src/utils/prisma", () => ({
 vi.mock("../../src/utils/portfolioPublicationCache", () => ({
   invalidatePublicPortfolioCaches: vi.fn().mockResolvedValue(undefined),
   revalidatePublicPortfolios: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock("../../src/utils/redis", () => ({
+  cacheDel: vi.fn().mockResolvedValue(undefined),
+  cacheGet: vi.fn().mockResolvedValue(null),
+  cacheSet: vi.fn().mockResolvedValue(undefined),
+  getRedis: vi.fn(),
+}));
+
+vi.mock("../../src/services/affiliateService", () => ({
+  AffiliateService: affiliateMock,
+}));
+
+vi.mock("../../src/services/creditService", () => ({
+  CreditService: creditMock,
 }));
 
 vi.mock("../../src/config", () => ({
@@ -57,9 +82,17 @@ describe("billing webhook processing and idempotency", () => {
     prismaMock.subscription.findUnique.mockReset();
     prismaMock.subscription.updateMany.mockReset();
     prismaMock.subscription.create.mockReset();
+    prismaMock.entitlementGrant.updateMany.mockReset();
+    prismaMock.entitlementGrant.upsert.mockReset();
+    prismaMock.entitlementGrant.findFirst.mockReset();
+    prismaMock.entitlementGrant.updateMany.mockResolvedValue({ count: 0 });
+    prismaMock.entitlementGrant.upsert.mockResolvedValue({});
+    prismaMock.entitlementGrant.findFirst.mockResolvedValue({ endsAt: null });
     prismaMock.user.update.mockReset();
     prismaMock.portfolioPublication.updateMany.mockReset();
     prismaMock.portfolioPublication.findUnique.mockReset();
+    affiliateMock.createCommission.mockReset();
+    creditMock.grant.mockReset();
   });
 
   const validEvent = {
@@ -246,5 +279,42 @@ describe("billing webhook processing and idempotency", () => {
     );
 
     expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+
+  it("creates affiliate commission only when a paid payment event succeeds", async () => {
+    const { BillingService } = await import("../../src/services/billingService");
+    prismaMock.billingWebhookEvent.create.mockResolvedValue({
+      id: "evt_payment",
+      status: "PROCESSING",
+      retryCount: 0,
+    });
+    prismaMock.subscription.findUnique.mockResolvedValue({
+      userId: "user_123",
+      productKey: "portfolio_pro",
+      interval: "MONTHLY",
+      currentPeriodEnd: new Date("2026-07-01T00:00:00.000Z"),
+    });
+    affiliateMock.createCommission.mockResolvedValue({ id: "commission_1" });
+
+    await BillingService.processWebhook("evt_paid", {
+      type: "payment.succeeded",
+      timestamp: "2026-06-11T12:00:00.000Z",
+      data: {
+        payment_id: "payment_123",
+        subscription_id: "sub_123",
+        settlement_amount: 999,
+        settlement_currency: "USD",
+        metadata: { veriworkly_user_id: "user_123" },
+      },
+    });
+
+    expect(affiliateMock.createCommission).toHaveBeenCalledWith({
+      referredUserId: "user_123",
+      subscriptionId: "sub_123",
+      providerPaymentId: "payment_123",
+      purchaseAmountCents: 999,
+      status: "PENDING",
+      reason: "Dodo payment succeeded",
+    });
   });
 });

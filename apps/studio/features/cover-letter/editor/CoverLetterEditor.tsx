@@ -170,6 +170,7 @@ export default function CoverLetterEditor({ documentId }: CoverLetterEditorProps
         contentPanel={
           <CoverLetterContentPanel
             content={content}
+            documentId={currentDoc.id}
             links={links}
             onAddLink={addLink}
             onRemoveLink={removeLink}

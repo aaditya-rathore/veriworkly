@@ -5,6 +5,7 @@ import { Field } from "./Field";
 import { AssetUpload } from "./AssetUpload";
 import { SectionEditor } from "./SectionEditor";
 import { inputClass as input } from "./constants";
+import { PortfolioAiAssist } from "./PortfolioAiAssist";
 
 export interface ContentCanvasProps {
   selectedSectionId: string;
@@ -14,6 +15,7 @@ export interface ContentCanvasProps {
 export function ContentCanvas({ selectedSectionId, onClose }: ContentCanvasProps) {
   const content = usePortfolioStore((state) => state.content);
   const updateIdentity = usePortfolioStore((state) => state.updateIdentity);
+  const documentId = usePortfolioStore((state) => state.draft?.id);
   const selectedSection = content.sections.find((section) => section.id === selectedSectionId);
 
   return (
@@ -52,6 +54,12 @@ export function ContentCanvas({ selectedSectionId, onClose }: ContentCanvasProps
               onChange={(e) => updateIdentity({ headline: e.target.value })}
             />
           </Field>
+          <PortfolioAiAssist
+            context={JSON.stringify({ name: content.identity.name, bio: content.identity.bio })}
+            documentId={documentId}
+            onApply={(headline) => updateIdentity({ headline })}
+            text={content.identity.headline}
+          />
           <Field label="Short introduction">
             <textarea
               className={input}
@@ -60,6 +68,15 @@ export function ContentCanvas({ selectedSectionId, onClose }: ContentCanvasProps
               onChange={(e) => updateIdentity({ bio: e.target.value })}
             />
           </Field>
+          <PortfolioAiAssist
+            context={JSON.stringify({
+              identity: content.identity,
+              sections: content.sections.map(({ type, title, items }) => ({ type, title, items })),
+            })}
+            documentId={documentId}
+            onApply={(bio) => updateIdentity({ bio })}
+            text={content.identity.bio}
+          />
           <div className="grid gap-3 sm:grid-cols-2">
             <Field label="Location">
               <input

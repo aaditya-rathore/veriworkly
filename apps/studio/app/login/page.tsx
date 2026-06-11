@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 import { Input, Badge, Button } from "@veriworkly/ui";
@@ -12,6 +13,7 @@ import { LoginFeatures } from "./component/LoginFeatures";
 
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
+import { fetchApiData } from "@/utils/fetchApiData";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -20,6 +22,16 @@ const LoginPage = () => {
   const [sentTo, setSentTo] = useState("");
 
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("ref");
+    if (!code || sessionStorage.getItem(`affiliate-click:${code}`)) return;
+    sessionStorage.setItem(`affiliate-click:${code}`, "1");
+    void fetchApiData("/affiliates/click", {
+      method: "POST",
+      body: JSON.stringify({ code, referrerHost: document.referrer ? new URL(document.referrer).hostname : undefined }),
+    }).catch(() => sessionStorage.removeItem(`affiliate-click:${code}`));
+  }, []);
 
   const handleGuestAccess = () => {
     router.push("/");

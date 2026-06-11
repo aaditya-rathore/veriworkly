@@ -6,6 +6,7 @@ import { Field } from "./Field";
 import { ItemAction } from "./ItemAction";
 import { AssetUpload } from "./AssetUpload";
 import { actionClass as action, inputClass as input, sectionInfo } from "./constants";
+import { PortfolioAiAssist } from "./PortfolioAiAssist";
 
 export interface SectionEditorProps {
   section: PortfolioSection;
@@ -13,6 +14,7 @@ export interface SectionEditorProps {
 
 export function SectionEditor({ section }: SectionEditorProps) {
   const updateSection = usePortfolioStore((state) => state.updateSection);
+  const documentId = usePortfolioStore((state) => state.draft?.id);
   const replaceItems = (items: Array<Record<string, unknown>>) =>
     updateSection(section.id, { items });
   const updateItem = (index: number, patch: Record<string, unknown>) =>
@@ -102,6 +104,17 @@ export function SectionEditor({ section }: SectionEditorProps) {
                 onChange={(e) => updateItem(index, { summary: e.target.value })}
               />
             </Field>
+            <PortfolioAiAssist
+              context={JSON.stringify({
+                sectionType: section.type,
+                sectionTitle: section.title,
+                itemTitle: item.title,
+                year: item.year,
+              })}
+              documentId={documentId}
+              onApply={(summary) => updateItem(index, { summary })}
+              text={String(item.summary ?? "")}
+            />
             {section.type === "projects" ? (
               <AssetUpload
                 kind="PROJECT_COVER"

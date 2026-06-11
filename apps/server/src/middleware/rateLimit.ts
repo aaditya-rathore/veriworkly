@@ -40,6 +40,7 @@ function getSanitizedPath(path: string): string {
 
 function getRouteLimitConfig(req: Request) {
   const isAuthRoute = req.path.startsWith("/api/v1/auth");
+  const isAiRoute = req.path.startsWith("/api/v1/ai");
   const isStatsEventsRoute = req.path.startsWith("/api/v1/stats/events");
 
   const isShareVerifyRoute = /\/shares\/public\/[^/]+\/[^/]+\/verify$/.test(req.path);
@@ -55,6 +56,13 @@ function getRouteLimitConfig(req: Request) {
     return {
       windowMs: 60 * 1000, // 1 minute
       maxRequests: 15, // 15 requests per minute
+    };
+  }
+
+  if (isAiRoute) {
+    return {
+      windowMs: config.ai.rateLimitWindowMs,
+      maxRequests: config.ai.rateLimitMaxRequests,
     };
   }
 

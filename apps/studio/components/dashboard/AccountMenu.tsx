@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, CreditCard, LogIn, LogOut, User, UserRound, Settings } from "lucide-react";
+import { ChevronDown, Coins, CreditCard, LogIn, LogOut, User, UserRound, Settings } from "lucide-react";
 
 import { signOutCurrentUser } from "@/features/auth/services/current-user";
 
@@ -100,6 +100,13 @@ export function AccountMenu({
                 label="Billing"
                 onClick={() => {
                   router.push("/billing");
+                }}
+              />
+              <AccountMenuItem
+                icon={Coins}
+                label="AI credits"
+                onClick={() => {
+                  router.push("/credits");
                 }}
               />
             </>

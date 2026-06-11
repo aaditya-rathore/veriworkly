@@ -141,3 +141,9 @@ export async function fetchAdminRoadmapFeatureServer(id: string) {
   const payload = (await response.json()) as ApiSuccessResponse<RoadmapFeature>;
   return payload.data;
 }
+
+export async function fetchAdminMonetizationServer<T>() {
+  const response = await fetchWithSession("/admin/monetization", { method: "GET" });
+  if (!response.ok) throw new Error(`Admin monetization request failed (${response.status})`);
+  return ((await response.json()) as ApiSuccessResponse<T>).data;
+}

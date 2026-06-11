@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { getSafeAuthCallback } from "@/lib/auth-redirect";
 import { Input, Badge, Button } from "@veriworkly/ui";
+import { fetchApiData } from "@/utils/fetchApiData";
 
 import { AuthCard } from "./AuthCard";
 
@@ -51,7 +52,15 @@ const OtpForm = ({
       }
 
       toast.success("Successfully signed in!");
-      const callbackURL = new URLSearchParams(window.location.search).get("callbackURL");
+      const searchParams = new URLSearchParams(window.location.search);
+      const referralCode = searchParams.get("ref");
+      if (referralCode) {
+        await fetchApiData("/affiliates/referral", {
+          method: "POST",
+          body: JSON.stringify({ code: referralCode }),
+        }).catch(() => undefined);
+      }
+      const callbackURL = searchParams.get("callbackURL");
       router.push(getSafeAuthCallback(callbackURL));
       router.refresh();
     } catch (err: unknown) {

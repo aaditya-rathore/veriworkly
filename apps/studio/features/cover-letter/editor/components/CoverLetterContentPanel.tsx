@@ -10,11 +10,13 @@ import type { ResumeLinkDisplayMode, ResumeLinkItem, ResumeLinkType } from "@/ty
 
 import { linkTypeOptions } from "@/features/documents/editor/link-options";
 import SectionAccordion from "@/features/resume/editor/content/SectionAccordion";
+import { AiFieldAssist } from "@/features/ai/AiFieldAssist";
 
 import { EditorBlock, Field, TextField } from "./CoverLetterFields";
 
 interface CoverLetterContentPanelProps {
   content: CoverLetterContent;
+  documentId: string;
   links: CoverLetterContent["links"];
   onAddLink: () => void;
   onRemoveLink: (index: number) => void;
@@ -25,6 +27,7 @@ interface CoverLetterContentPanelProps {
 
 export function CoverLetterContentPanel({
   content,
+  documentId,
   links,
   onAddLink,
   onRemoveLink,
@@ -245,6 +248,13 @@ export function CoverLetterContentPanel({
             value={content.body}
             className="min-h-44 font-mono text-[13px]"
             onChange={(body) => onUpdateContent({ body })}
+          />
+          <AiFieldAssist
+            action="generate_cover_letter"
+            context={JSON.stringify(content)}
+            documentId={documentId}
+            onApply={(body) => onUpdateContent({ body })}
+            text={content.body}
           />
 
           <TextField
