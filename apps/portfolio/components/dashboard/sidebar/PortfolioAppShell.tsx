@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import type { PortfolioWorkspaceBootstrap } from "@/store/portfolio-store";
@@ -23,11 +23,9 @@ export function PortfolioAppShell({
   user: PortfolioWorkspaceBootstrap["user"];
   draftSlug?: string;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
-
-  useEffect(() => {
-    setCollapsed(window.localStorage.getItem("portfolio-sidebar-collapsed") === "true");
-  }, []);
+  const [collapsed, setCollapsed] = useState(
+    () => typeof window !== "undefined" && window.localStorage.getItem("portfolio-sidebar-collapsed") === "true",
+  );
 
   const toggleSidebar = () => {
     setCollapsed((current) => {

@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronsLeft, ChevronsRight, LogIn, Menu as MenuIcon, Search, X } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, Menu as MenuIcon, Search, X } from "lucide-react";
 
 import type { DocumentType } from "@/features/documents/core/document-types";
 
@@ -40,7 +40,7 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { user, isLoggedIn } = useUserStore();
+  const { user } = useUserStore();
 
   const [collapsed, setCollapsed] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -75,6 +75,7 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
         collapsed ? "lg:grid-cols-[4rem_minmax(0,1fr)]" : "lg:grid-cols-[16.5rem_minmax(0,1fr)]",
       )}
     >
+      {/* Mobile Navigation */}
       <aside className="border-border/70 bg-background/95 sticky top-0 z-40 hidden h-dvh flex-col border-r lg:flex">
         <div
           className={cn(
@@ -195,7 +196,7 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
         {mobileNavOpen ? (
           <div className="border-border/70 bg-background/95 space-y-4 border-b p-4 backdrop-blur lg:hidden">
             <nav className="grid gap-1" aria-label="Mobile studio navigation">
-              {[...mainNav, ...supportNav].map((item) => (
+              {[...mainNav, ...supportNav, ...bottomNav].map((item) => (
                 <StudioNavLink
                   item={item}
                   key={item.href}
@@ -205,24 +206,16 @@ const StudioShell = ({ children, mainClassName }: StudioShellProps) => {
               ))}
             </nav>
 
-            <div className="border-border bg-card flex items-center justify-between rounded-2xl border p-3">
-              {isLoggedIn ? (
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{displayName}</p>
-                  <p className="text-muted truncate text-xs">{email}</p>
-                </div>
-              ) : (
-                <Link
-                  href="/login"
-                  onClick={() => setMobileNavOpen(false)}
-                  className="text-accent flex items-center gap-2 text-sm font-semibold"
-                >
-                  <LogIn className="h-4 w-4 shrink-0" />
-                  Log In
-                </Link>
-              )}
-
-              <ThemeToggle className="h-9 w-9 rounded-xl px-0" />
+            <div className="flex items-center gap-2">
+              <div className="flex-1">
+                <AccountMenu
+                  collapsed={false}
+                  displayName={displayName}
+                  email={email}
+                  version={STUDIO_VERSION}
+                />
+              </div>
+              <ThemeToggle className="h-9 w-9 shrink-0 rounded-xl px-0" />
             </div>
           </div>
         ) : null}
