@@ -6,7 +6,7 @@ import { ChevronDown, RotateCcw } from "lucide-react";
 
 import { Button } from "@veriworkly/ui";
 
-import { SettingsColor, SettingsRange } from "./SettingControls";
+import { SettingsColor } from "./SettingControls";
 
 interface AdvancedThemeSettingsProps {
   advancedOpen: boolean;
@@ -84,19 +84,6 @@ const AdvancedThemeSettings = ({
             label="Item heading color"
             onChange={(event) => onUpdateCustomization({ sectionHeadingColor: event.target.value })}
             value={customization.sectionHeadingColor}
-          />
-
-          <SettingsRange
-            label={`Body line-height (${customization.bodyLineHeight.toFixed(2)})`}
-            max={2}
-            min={1}
-            onChange={(event) =>
-              onUpdateCustomization({
-                bodyLineHeight: Number(event.target.value),
-              })
-            }
-            step={0.05}
-            value={customization.bodyLineHeight}
           />
 
           <div className="md:col-span-2">
